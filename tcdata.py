@@ -13,12 +13,11 @@ class BasinHistory(object):
     def basin(self):
         return self._basin
 
-    @property
-    def datapoints(self):
-        return tuple(self._pts)
+    def query(self, queryfunc):
+        return _BasinHistoryView(self, queryfunc)
 
-    def subset(self, filter_func):
-        return _BasinHistoryView(self, filter_func)
+    def __len__(self):
+        return len(self._pts)
 
     def __iter__(self):
         return iter(self._pts)
@@ -29,12 +28,27 @@ class BasinHistory(object):
 
 
 class _BasinHistoryView(object):
-    def __init__(self, basin_hist, filter_func):
-        self._basin_hist = basin_hist
-        self._filter = filter_func
+    def __init__(self, basin_hist, queryfunc):
+        self._original_pts = (pt for pt in basin_hist)
+        self._query = queryfunc
+        self._saved_pts = []
+
+    def query(self, queryfunc):
+        self._query = lambda x: self._query(x) and queryfunc(x)
+        self._saved_pts = []
+        return self
+
+    def _cache_pts_if_needed(self):
+        if not self._saved_pts:
+            self._saved_pts = [pt for pt in self._original_pts if self._query(pt)]
+
+    def __len__(self):
+        self._cache_pts_if_needed()
+        return len(self._saved_pts)
 
     def __iter__(self):
-        return iter((pt for pt in self._basin_hist if self._filter(pt)))
+        self._cache_pts_if_needed()
+        return iter(self._saved_pts)
 
 
 StormId = namedtuple('StormId', 'basin number year name raw')

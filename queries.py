@@ -6,7 +6,7 @@ __author__ = 'tangz'
 def years(begin=None, end=None, eq=None):
     def _yr_func(datapoint):
         if eq:
-            return datapoint.storm.year == eq or datapoint.storm.year in eq
+            return datapoint.storm.year in eq if hasattr(eq, '__iter__') else datapoint.storm.year == eq
         if begin and end:
             return begin <= datapoint.storm.year <= end
         elif begin:
@@ -21,17 +21,6 @@ def statuses(*args):
     return lambda datapoint: datapoint.status in args
 
 
-def storm(year, name=None, number=None):
-    def _storm_fn(datapoint):
-        if name is None and number is None:
-            raise ValueError('Need either a name or a number of a storm')
-        if name is None:
-            return datapoint.storm.number == number and datapoint.storm.year == year
-        else:
-            return datapoint.storm.name == name.upper() and datapoint.storm.year == year
-    return _storm_fn
-
-
 _SSHS_CATEGORIES = {1: 65, 2: 85, 3: 100, 4: 115, 5: 140}
 
 def sshws_category(at_least):
@@ -40,16 +29,6 @@ def sshws_category(at_least):
             raise ValueError('Invalid saffir-simpson category: ' + str(at_least))
         return datapoint.windspd >= _SSHS_CATEGORIES[at_least]
     return _sshws_cat_fn
-
-
-Strength = namedtuple('Strength', 'td ts hu mh')
-_td = statuses('TD', 'TS', 'HU')
-_ts = statuses('TS', 'HU')
-_hu = statuses('HU')
-_mh = sshws_category(3)
-strength = Strength(td=_td, ts=_ts, hu=_hu, mh=_mh)
-
-istropical = _td
 
 
 def allof(*queries):
@@ -68,3 +47,13 @@ def anyof(*queries):
                 return True
         return False
     return _any_of
+
+
+_tropical = ('TD', 'TS', 'HU')
+_subtrop = ('SD', 'SS')
+
+istropical = statuses(*_tropical)
+issubtropical = statuses(*_subtrop)
+isclassifiable = statuses(*(_tropical + _subtrop))
+ishurricane = statuses('HU')
+ismajor = sshws_category(3)

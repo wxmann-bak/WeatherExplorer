@@ -1,5 +1,5 @@
-from queries import storm, years
 import load
+import visual
 
 __author__ = 'tangz'
 
@@ -8,9 +8,7 @@ file = 'hurdat2-1851-2015-070616.txt'
 
 def main():
     all_hurdat = load.hurdat2(file)
-    kat = all_hurdat.query(years(eq=[2000]))
-    for bt_pt in kat:
-        print(bt_pt)
+    visual.plot_intensity(all_hurdat, 2005, 'Katrina')
 
 
 if __name__ == '__main__':

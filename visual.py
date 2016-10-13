@@ -5,7 +5,7 @@ import load
 
 
 def plot_intensity(basin_hist, year, name=None, number=None):
-    storm_to_plot = basin_hist.storm(year, name, number).classifiable()
+    storm_to_plot = basin_hist.tc(year, name, number).classifiable()
     time_pts = []
     intensity_pts = []
     t0 = storm_to_plot.first.timestamp

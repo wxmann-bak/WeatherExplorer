@@ -12,14 +12,14 @@ class Queryable(object):
 
 
 class StormRetrievable(object):
-    def storm(self, year, name=None, number=None):
+    def tc(self, year=None, name=None, number=None, idtuple=None):
         raise NotImplementedError('Subclass must implement this')
 
 
 class BasinHistory(Queryable, StormRetrievable):
     def __init__(self, basin):
         self._basin = basin
-        self._pts = []
+        self._stormpts = {}
 
     @property
     def basin(self):
@@ -28,27 +28,44 @@ class BasinHistory(Queryable, StormRetrievable):
     def query(self, queryfunc):
         return _BasinHistoryView(self, queryfunc)
 
-    def storm(self, year, name=None, number=None):
+    def tc(self, year=None, name=None, number=None, idtuple=None):
+        if idtuple is not None:
+            return self._tc_get_from_tuple(idtuple)
+        elif year is None:
+            raise ValueError('Must supply a year if id tuple not given')
+        elif name is None and number is None:
+            raise ValueError('Must supply either a name or a number for a storm')
+        return self._tc_get_from_params(name, number, year)
+
+    def _tc_get_from_tuple(self, idtuple):
+        for stormid in self:
+            if stormid.name == idtuple.name \
+                    and stormid.basin == idtuple.basin \
+                    and stormid.number == idtuple.number \
+                    and stormid.year == idtuple.year:
+                datapoints = self._stormpts[stormid]
+                return StormHistory.from_hurdat_points(datapoints)
+        return None
+
+    def _tc_get_from_params(self, name, number, year):
         datapoints = []
-        for datapoint in self:
-            if name is not None:
-                if datapoint.storm.name == name.upper() and datapoint.storm.year == year:
-                    datapoints.append(datapoint)
-            elif number is not None:
-                if datapoint.storm.number == number and datapoint.storm.year == year:
-                    datapoints.append(datapoint)
-            else:
-                raise ValueError('Must supply either a name or a number for a storm')
-        return StormHistory.from_hurdat_points(datapoints)
+        for stormid in self:
+            if name is not None and stormid.name == name.upper() and stormid.year == year:
+                datapoints = self._stormpts[stormid]
+            elif number is not None and stormid.number == number and stormid.year == year:
+                datapoints = self._stormpts[stormid]
+        return StormHistory.from_hurdat_points(datapoints) if datapoints else None
 
     def __len__(self):
-        return len(self._pts)
+        return len(self._stormpts)
 
     def __iter__(self):
-        return iter(self._pts)
+        return iter(self._stormpts)
 
     def __add__(self, pt):
-        self._pts.append(pt)
+        if pt.storm not in self._stormpts:
+            self._stormpts[pt.storm] = []
+        self._stormpts[pt.storm].append(pt)
         return self
 
 
@@ -71,7 +88,7 @@ class StormHistory(Queryable):
 
     def __init__(self, stormid):
         self._stormid = stormid
-        self._pts = []
+        self._pts = None
 
     def _check_contains_pts(self):
         if not self._pts:
@@ -108,7 +125,7 @@ class StormHistory(Queryable):
         return self._pts[-1]
 
     @property
-    def lifetime(self):
+    def longevity(self):
         return self.last.timestamp - self.first.timestamp
 
     def classifiable(self):
@@ -117,6 +134,9 @@ class StormHistory(Queryable):
 
     def __iter__(self):
         return iter(self._pts)
+
+    def __len__(self):
+        return len(self._pts)
 
     def query(self, queryfunc):
         filtered_pts = [pt for pt in self._pts if queryfunc(pt)]

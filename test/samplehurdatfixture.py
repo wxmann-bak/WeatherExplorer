@@ -54,6 +54,7 @@ hurdat_for_queries += BestTrackPoint(storm=StormId(basin='AL', number=2, year=20
 hurdat_for_queries += BestTrackPoint(storm=StormId(basin='AL', number=2, year=2007, name='BERYL', raw='AL022004'),
                                      timestamp=datetime.datetime(2004, 9, 24, 6, 0), ident='', status='SD', lat=48.3,
                                      lon=39.5, windspd=30, pres=987)
+
 hurdat_for_queries = hurdat_for_queries.build()
 
 hurdat_for_tcdata = BasinBuilder(TEST_BASIN_FOR_TCDATA)

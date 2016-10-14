@@ -1,7 +1,9 @@
 import datetime
 import unittest
-from tcdata import StormId, StormHistory
+
+from tcdata import StormHistory
 from test import samplehurdatfixture
+
 
 __author__ = 'tangz'
 
@@ -31,17 +33,16 @@ class BasinHistoryTest(unittest.TestCase):
         self.assertEqual(albertohist.year, year)
         self.assertEqual(len(albertohist), 7)
 
-    def test_should_find_storm_based_on_idtuple(self):
-        id = StormId(basin='AL', number=3, year=2000, name='ALBERTO', raw='')
-        albertohist = self.basindata.tc(idtuple=id)
-        self.assertEqual(albertohist.name, id.name)
-        self.assertEqual(albertohist.number, id.number)
-        self.assertEqual(albertohist.basin, id.basin)
-        self.assertEqual(albertohist.year, id.year)
-        self.assertEqual(len(albertohist), 7)
-
-    def should_get_length_equal_to_number_of_storms(self):
+    def test_should_get_length_equal_to_number_of_storms(self):
         self.assertEqual(len(self.basindata), 4)
+
+    def test_should_iterate_through_storms(self):
+        length = 4
+        i = 0
+        for storm in self.basindata:
+            self.assertIsNotNone(storm)
+            i += 1
+        self.assertEqual(length, i)
 
 
 class StormHistoryTests(unittest.TestCase):
@@ -52,27 +53,35 @@ class StormHistoryTests(unittest.TestCase):
         self.tcyear = 2000
         self.tcbasin = 'AL'
         self.tcid = 'AL032000'
+        self.tc = StormHistory.from_hurdat_points(self.tcpts)
 
     def test_create_storm_history_from_points(self):
-        tc = StormHistory.from_hurdat_points(self.tcpts)
-        self.assertEqual(tc.name, self.tcname)
-        self.assertEqual(tc.number, self.tcnumber)
-        self.assertEqual(tc.year, self.tcyear)
-        self.assertEqual(tc.basin, self.tcbasin)
-        self.assertEqual(tc.id, self.tcid)
+        self.assertEqual(self.tc.name, self.tcname)
+        self.assertEqual(self.tc.number, self.tcnumber)
+        self.assertEqual(self.tc.year, self.tcyear)
+        self.assertEqual(self.tc.basin, self.tcbasin)
+        self.assertEqual(self.tc.id, self.tcid)
 
     def test_should_get_length_from_storm(self):
-        tc = StormHistory.from_hurdat_points(self.tcpts)
-        self.assertEqual(len(tc), 7)
+        self.assertEqual(len(self.tc), 7)
 
     def test_should_get_classifiable_points_from_tc(self):
-        tc = StormHistory.from_hurdat_points(self.tcpts).classifiable()
+        tc = self.tc.classifiable()
         for point in tc:
             self.assertIn(point.status, ('TS', 'HU', 'TD', 'SS', 'SD'))
         self.assertEqual(len(tc), 6)
 
     def test_should_get_longevity_from_tc(self):
-        tc = StormHistory.from_hurdat_points(self.tcpts)
         first_date = datetime.datetime(2000, 8, 3, 18, 0)
         last_date = datetime.datetime(2000, 8, 23, 18, 0)
-        self.assertEqual(tc.longevity, last_date - first_date)
+        self.assertEqual(self.tc.longevity, last_date - first_date)
+
+    def test_should_get_max_wind_speed_from_tc(self):
+        self.assertEqual(self.tc.max_wind_speed, 115)
+
+    def test_should_get_min_ctrl_pres_from_tc(self):
+        self.assertEqual(self.tc.min_ctrl_pres, 977)
+
+    def test_should_get_lifecycle_from_tc(self):
+        self.assertEqual(self.tc.lifecycle, ('TD', 'TS', 'HU', 'TS', 'SS', 'EX'))
+

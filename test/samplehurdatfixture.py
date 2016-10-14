@@ -1,11 +1,12 @@
 import datetime
 from tcdata import BasinHistory, StormId, BestTrackPoint
+from load import BasinBuilder
 
 TEST_BASIN_FOR_TCDATA = 'AL'
 
 __author__ = 'tangz'
 
-hurdat_for_queries = BasinHistory('dummy')
+hurdat_for_queries = BasinBuilder('dummy')
 # combined snippets from real BT data
 hurdat_for_queries += BestTrackPoint(storm=StormId(basin='AL', number=3, year=2000, name='ALBERTO', raw='AL032000'),
                                      timestamp=datetime.datetime(2000, 8, 3, 18, 0), ident='', status='TD', lat=10.8,
@@ -53,8 +54,9 @@ hurdat_for_queries += BestTrackPoint(storm=StormId(basin='AL', number=2, year=20
 hurdat_for_queries += BestTrackPoint(storm=StormId(basin='AL', number=2, year=2007, name='BERYL', raw='AL022004'),
                                      timestamp=datetime.datetime(2004, 9, 24, 6, 0), ident='', status='SD', lat=48.3,
                                      lon=39.5, windspd=30, pres=987)
+hurdat_for_queries = hurdat_for_queries.build()
 
-hurdat_for_tcdata = BasinHistory(TEST_BASIN_FOR_TCDATA)
+hurdat_for_tcdata = BasinBuilder(TEST_BASIN_FOR_TCDATA)
 # combined snippets from real BT data
 hurdat_for_tcdata += BestTrackPoint(storm=StormId(basin='AL', number=3, year=2000, name='ALBERTO', raw='AL032000'),
                                     timestamp=datetime.datetime(2000, 8, 3, 18, 0), ident='', status='TD', lat=10.8,
@@ -102,6 +104,7 @@ hurdat_for_tcdata += BestTrackPoint(storm=StormId(basin='AL', number=2, year=200
 hurdat_for_tcdata += BestTrackPoint(storm=StormId(basin='AL', number=2, year=2007, name='BERYL', raw='AL022004'),
                                     timestamp=datetime.datetime(2004, 9, 24, 6, 0), ident='', status='SD', lat=48.3,
                                     lon=39.5, windspd=30, pres=987)
+hurdat_for_tcdata = hurdat_for_tcdata.build()
 
 just_alberto_2000_points = [
     BestTrackPoint(storm=StormId(basin='AL', number=3, year=2000, name='ALBERTO', raw='AL032000'),
@@ -115,7 +118,7 @@ just_alberto_2000_points = [
                    lon=33.2, windspd=65, pres=987),
     BestTrackPoint(storm=StormId(basin='AL', number=3, year=2000, name='ALBERTO', raw='AL032000'),
                    timestamp=datetime.datetime(2000, 8, 23, 0, 0), ident='', status='HU', lat=48.3,
-                   lon=39.5, windspd=115, pres=987),
+                   lon=39.5, windspd=115, pres=977),
     BestTrackPoint(storm=StormId(basin='AL', number=3, year=2000, name='ALBERTO', raw='AL032000'),
                    timestamp=datetime.datetime(2000, 8, 23, 6, 0), ident='', status='TS', lat=50.7,
                    lon=36.8, windspd=55, pres=994),

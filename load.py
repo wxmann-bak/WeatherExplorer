@@ -2,7 +2,7 @@ import csv
 from datetime import datetime
 import re
 
-from tcdata import BestTrackPoint, BasinHistory, storm_id
+from tcdata import BestTrackPoint, BasinHistory, StormHistory, StormId
 
 
 __author__ = 'tangz'
@@ -11,7 +11,7 @@ __author__ = 'tangz'
 def hurdat2(hurdat_file):
     tc_on = None
     atlantic = 'AL'
-    all_storms = BasinHistory(atlantic)
+    basin_builder = BasinBuilder(atlantic)
     lines_processed = 0
     lines_skipped = 0
     with open(hurdat_file) as csvfile:
@@ -21,7 +21,7 @@ def hurdat2(hurdat_file):
                 if line[0].startswith(atlantic):
                     tc_on = parse_storm_title(line)
                 else:
-                    all_storms += parse_storm_point(line, tc_on)
+                    basin_builder += parse_storm_point(line, tc_on)
                 lines_processed += 1
             else:
                 lines_skipped += 1
@@ -31,7 +31,7 @@ def hurdat2(hurdat_file):
     _log('Lines processed: ' + str(lines_processed))
     _log('Lines skipped: ' + str(lines_skipped))
     _log('=======================')
-    return all_storms
+    return basin_builder.build()
 
 
 def parse_storm_title(row):
@@ -63,3 +63,34 @@ def parse_storm_point(row, storm):
 
 def _log(stmt):
     print(stmt)
+
+
+class BasinBuilder(object):
+    def __init__(self, basin_name):
+        self._basin = basin_name
+        self._storm_pts = {}
+
+    def __add__(self, pt):
+        if pt.storm not in self._storm_pts:
+            self._storm_pts[pt.storm] = []
+        self._storm_pts[pt.storm].append(pt)
+        return self
+
+    def build(self):
+        storms = []
+        for stormid in self._storm_pts:
+            pts_for_storm = self._storm_pts[stormid]
+            stormhist = StormHistory.from_hurdat_points(pts_for_storm)
+            storms.append(stormhist)
+        return BasinHistory(self._basin, storms)
+
+
+def storm_id(raw, storm_name):
+    matches = re.match(r'(\w{2})(\d{2})(\d{4})', raw)
+    if matches:
+        basin = matches.group(1)
+        storm_number = int(matches.group(2))
+        year = int(matches.group(3))
+        return StormId(basin, storm_number, year, storm_name, raw)
+    else:
+        raise ValueError("Invalid TC information: " + raw)

@@ -7,6 +7,17 @@ def years(*valid_years):
     return lambda storm: storm.year in valid_years
 
 
+def year_range(begin=None, end=None):
+    if begin and end:
+        return lambda storm: begin <= storm.year <= end
+    elif begin:
+        return lambda storm: begin <= storm.year
+    elif end:
+        return lambda storm: storm.year <= end
+    else:
+        return lambda storm: True
+
+
 def statuses(*args):
     def _status_func(storm):
         for status in args:

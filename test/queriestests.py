@@ -27,6 +27,12 @@ class QueriesTests(unittest.TestCase):
             self.assertTrue(storm.year == 2001 or storm.year == 2004)
         self.assertEqual(len(filtered_storms), 1)
 
+    def test_should_filter_by_year_range(self):
+        filtered_storms = samplehurdatfixture.hurdat_for_queries.query(queries.year_range(2001, 2006))
+        for storm in filtered_storms:
+            self.assertTrue(storm.year in range(2001, 2007))
+        self.assertEqual(len(filtered_storms), 1)
+
     def test_should_filter_by_subtropical_status(self):
         filtered_storms = samplehurdatfixture.hurdat_for_queries.query(queries.issubtropical)
         for storm in filtered_storms:

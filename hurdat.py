@@ -3,12 +3,14 @@ import visual
 
 __author__ = 'tangz'
 
-file = 'hurdat2-1851-2015-070616.txt'
+# file = 'hurdat2-1851-2015-070616.txt'
 
 
 def main():
-    all_hurdat = load.hurdat2(file)
-    visual.plot_intensity(all_hurdat, 2005, 'Katrina')
+    matthew_storm = 'MATTHEW'
+    matthew = load.atcf('bal142016.dat', matthew_storm)
+    for datapoint in matthew:
+        print(datapoint)
 
 
 if __name__ == '__main__':

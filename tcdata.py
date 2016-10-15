@@ -1,8 +1,6 @@
 from collections import namedtuple
 from operator import attrgetter
 
-import queries
-
 
 __author__ = 'tangz'
 
@@ -91,16 +89,12 @@ class _BasinQueryResult(Queryable, StormRetrievable):
         self._cache_points_if_needed()
         return len(self._saved_tcs)
 
-    def __bool__(self):
-        self._cache_points_if_needed()
-        return len(self) > 0
-
     def __contains__(self, item):
         self._cache_points_if_needed()
         return item in self._saved_tcs
 
 
-class StormHistory():
+class StormHistory(object):
     @classmethod
     def from_hurdat_points(cls, datapoints):
         if not datapoints:

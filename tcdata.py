@@ -1,18 +1,46 @@
 from collections import namedtuple
 from operator import attrgetter
+import collections
 
+_NEED_TO_IMPLEMENT_THIS_MSG = 'Subclass must implement this'
 
 __author__ = 'tangz'
 
 
 class Queryable(object):
     def query(self, queryfunc):
-        raise NotImplementedError('Subclass must implement this')
+        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
 
 
 class StormRetrievable(object):
     def get_tc(self, year, name=None, number=None):
-        raise NotImplementedError('Subclass must implement this')
+        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
+
+
+class TCResultSet(Queryable, StormRetrievable, collections.Iterable):
+    def __iter__(self):
+        collections.Iterable.__iter__(self)
+
+    def query(self, queryfunc):
+        return Queryable.query(self, queryfunc)
+
+    def get_tc(self, year, name=None, number=None):
+        return StormRetrievable.get_tc(self, year, name, number)
+
+    def __contains__(self, item):
+        return False
+
+    def __len__(self):
+        return 0
+
+    def __add__(self, other):
+        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
+
+    def __sub__(self, other):
+        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
+
+    def __neg__(self):
+        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
 
 
 class BasinHistory(Queryable, StormRetrievable):
@@ -63,11 +91,19 @@ class BasinHistory(Queryable, StormRetrievable):
         return len(self._storms)
 
 
-class _BasinQueryResult(Queryable, StormRetrievable):
+class _BasinQueryResult(TCResultSet):
     def __init__(self, basin_hist, queryfn):
         self._queryfn = queryfn
         self._basin_hist = basin_hist
         self._saved_tcs = None
+
+    @property
+    def source(self):
+        return self._basin_hist
+
+    @property
+    def query_func(self):
+        return self._queryfn
 
     def query(self, queryfunc):
         new_queryfn = lambda tc: self._queryfn(tc) and queryfunc(tc)
@@ -89,9 +125,26 @@ class _BasinQueryResult(Queryable, StormRetrievable):
         self._cache_points_if_needed()
         return len(self._saved_tcs)
 
-    def __contains__(self, item):
+    def __contains__(self, tc):
         self._cache_points_if_needed()
-        return item in self._saved_tcs
+        return tc in self._saved_tcs
+
+    def __add__(self, other):
+        self._check_common_source(other)
+        new_queryfn = lambda tc: self._queryfn(tc) or other.query_func(tc)
+        return _BasinQueryResult(self._basin_hist, new_queryfn)
+
+    def __sub__(self, other):
+        self._check_common_source(other)
+        new_queryfn = lambda tc: self._queryfn(tc) and not other.query_func(tc)
+        return _BasinQueryResult(self._basin_hist, new_queryfn)
+
+    def __neg__(self):
+        new_queryfn = lambda tc: not self._queryfn(tc)
+        return _BasinQueryResult(self._basin_hist, new_queryfn)
+
+    def _check_common_source(self, other):
+        assert self.source == other.source
 
 
 class StormHistory(object):

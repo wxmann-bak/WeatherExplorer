@@ -30,13 +30,15 @@ first_year = 1960
 last_year = 2015
 last_decade = all_hurdat.query(queries.year_range(first_year, last_year))
     
-matthew_storm = 'MATTHEW'
-matthew = load.atcf('bal142016.dat', matthew_storm)
+#matthew_storm = 'MATTHEW'
+#matthew = load.atcf('bal142016.dat', matthew_storm)
+
+ivan = all_hurdat.get_tc(2004, 'IVAN')
 
 for storm in last_decade:
     plot_storm_windspeed(storm.classifiable(), color='blue', alpha=0.1, linewidth=0.5)
-plot_storm_windspeed(matthew.classifiable(), color='red', linewidth=1)
-plt.axis([0, 15, 10, 160])
+plot_storm_windspeed(ivan.classifiable(), color='red', linewidth=1)
+plt.axis([0, 16, 10, 160])
 plt.grid(True)
-plt.title('Hurricane Matthew (Red) vs. \nAll Atlantic TCs {0}-{1}'.format(first_year, last_year))
-pylab.savefig('matthew-{0}-{1}.png'.format(first_year, last_year), dpi=200, transparent=False)
+plt.title('Hurricane Ivan (Red) vs. \nAll Atlantic TCs {0}-{1}'.format(first_year, last_year))
+pylab.savefig('ivan-{0}-{1}.png'.format(first_year, last_year), dpi=200, transparent=False)

@@ -46,7 +46,7 @@ class BasinHistoryTest(unittest.TestCase):
         self.assertEqual(length, i)
 
     def test_should_query_storms(self):
-        year2000 = self.basindata.query(queries.years(2000))
+        year2000 = self.basindata.query(queries.year.eq(2000))
         for storm in year2000:
             self.assertEqual(storm.year, 2000)
         self.assertEqual(len(year2000), 2)
@@ -61,8 +61,8 @@ class TCResultSetTests(unittest.TestCase):
         self.basindata = samplehurdatfixture.hurdat_for_tcdata
 
     def test_should_query_storms_multiple_times(self):
-        pass_2000 = queries.years(2000)
-        pass_cat4 = queries.sshs_category(4)
+        pass_2000 = queries.year.eq(2000)
+        pass_cat4 = queries.sshs_category.eq(4)
         year2000_cat4s = self.basindata.query(pass_2000).query(pass_cat4)
 
         for storm in year2000_cat4s:
@@ -71,8 +71,8 @@ class TCResultSetTests(unittest.TestCase):
         self.assertEqual(len(year2000_cat4s), 1)
 
     def test_should_union_two_result_sets(self):
-        pass_2000 = queries.years(2000)
-        pass_cat4 = queries.sshs_category(4)
+        pass_2000 = queries.year.eq(2000)
+        pass_cat4 = queries.sshs_category.geq(4)
         year2000_or_cat4s = self.basindata.query(pass_2000) + self.basindata.query(pass_cat4)
 
         for storm in year2000_or_cat4s:
@@ -80,8 +80,8 @@ class TCResultSetTests(unittest.TestCase):
         self.assertEqual(len(year2000_or_cat4s), 3)
 
     def test_should_subtract_one_result_from_another(self):
-        pass_2000 = queries.years(2000)
-        pass_cat4 = queries.sshs_category(4)
+        pass_2000 = queries.year.eq(2000)
+        pass_cat4 = queries.sshs_category.eq(4)
         year2000_not_cat4 = self.basindata.query(pass_2000) - self.basindata.query(pass_cat4)
 
         for storm in year2000_not_cat4:
@@ -90,7 +90,7 @@ class TCResultSetTests(unittest.TestCase):
         self.assertEqual(len(year2000_not_cat4), 1)
 
     def test_should_find_complement_of_result(self):
-        pass_2000 = queries.years(2000)
+        pass_2000 = queries.year.eq(2000)
         not_year_2000 = -self.basindata.query(pass_2000)
 
         for storm in not_year_2000:
@@ -100,22 +100,22 @@ class TCResultSetTests(unittest.TestCase):
     def test_should_find_storms_in_queried_history(self):
         alberto2000 = self.basindata.get_tc(2000, 'Alberto')
         alberto2004 = self.basindata.get_tc(2004, 'Alberto')
-        year2000storms = self.basindata.query(queries.years(2000))
+        year2000storms = self.basindata.query(queries.year.eq(2000))
 
         self.assertTrue(alberto2000 in year2000storms)
         self.assertFalse(alberto2004 in year2000storms)
 
     def test_should_test_for_empty_query_result(self):
-        year2222storms = self.basindata.query(queries.years(2222))
-        year2000storms = self.basindata.query(queries.years(2000))
+        year2222storms = self.basindata.query(queries.year.eq(2222))
+        year2000storms = self.basindata.query(queries.year.eq(2000))
 
         self.assertFalse(year2222storms)
         self.assertTrue(year2000storms)
 
     def test_should_throw_error_if_not_same_source(self):
-        year2000 = self.basindata.query(queries.years(2000))
+        year2000 = self.basindata.query(queries.year.eq(2000))
         dummy = BasinHistory('another_dummy', ())
-        year2001 = dummy.query(queries.years(2001))
+        year2001 = dummy.query(queries.year.eq(2001))
 
         with self.assertRaises(AssertionError):
             should_throw_error = year2000 - year2001

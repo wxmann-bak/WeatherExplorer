@@ -44,8 +44,8 @@ hurdat_for_queries += BestTrackPoint(storm=StormId(basin='AL', number=1, year=20
                                      lon=39.5, windspd=65, pres=987)
 # add Cat 5
 hurdat_for_queries += BestTrackPoint(storm=StormId(basin='AL', number=1, year=2004, name='ALBERTO', raw='AL012004'),
-                                     timestamp=datetime.datetime(2004, 8, 24, 0, 0), ident='', status='HU', lat=48.3,
-                                     lon=39.5, windspd=145, pres=987)
+                                     timestamp=datetime.datetime(2004, 8, 24, 0, 0), ident='', status='HU', lat=25.7,
+                                     lon=-80.3, windspd=145, pres=917)
 
 # subtropical
 hurdat_for_queries += BestTrackPoint(storm=StormId(basin='AL', number=2, year=2007, name='BERYL', raw='AL022004'),

@@ -161,3 +161,14 @@ class StormHistoryTests(unittest.TestCase):
     def test_should_get_lifecycle_from_tc(self):
         self.assertEqual(self.tc.lifecycle, ('TD', 'TS', 'HU', 'TS', 'SS', 'EX'))
 
+    def test_should_get_max_sshs_category_from_tc(self):
+        self.assertEqual(self.tc.max_sshs_category, 4)
+
+    def test_should_get_ts_slices_from_tc(self):
+        slices = self.tc.slice(lambda storm: storm.status == 'TS')
+        for section in slices:
+            for datapoint in section:
+                self.assertEqual(datapoint.status, 'TS')
+            self.assertEqual(len(section), 1)
+        self.assertEqual(len(slices), 2)
+

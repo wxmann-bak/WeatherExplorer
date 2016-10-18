@@ -2,6 +2,9 @@ from collections import namedtuple
 from operator import attrgetter
 import collections
 
+from tcutils import sshs_category
+
+
 _NEED_TO_IMPLEMENT_THIS_MSG = 'Subclass must implement this'
 
 __author__ = 'tangz'
@@ -166,6 +169,11 @@ class StormHistory(object):
     def __init__(self, stormid, pts):
         self._stormid = stormid
         self._pts = pts
+        # self._time_key_map = {}
+
+    # def _build_time_key_map(self):
+    #     for pt in self._pts:
+    #         self._time_key_map[pt.timestamp] = pt
 
     def _check_contains_pts(self):
         if not self._pts:
@@ -214,6 +222,11 @@ class StormHistory(object):
         return min([pt.pres for pt in self._pts])
 
     @property
+    def max_sshs_category(self):
+        hu_windspds = [pt.windspd for pt in self._pts if pt.status == 'HU']
+        return sshs_category(max(hu_windspds)) if hu_windspds else -1
+
+    @property
     def lifecycle(self):
         statuses = []
         for datapoint in self:
@@ -225,6 +238,23 @@ class StormHistory(object):
         classified_pts = [pt for pt in self._pts if pt.status in ('HU', 'TS', 'TD', 'SS', 'SD')]
         return StormHistory.from_hurdat_points(classified_pts)
 
+    def slice(self, slice_fn):
+        on_slice = False
+        slice_on = []
+        slices = []
+        for pt in self:
+            if slice_fn(pt):
+                slice_on.append(pt)
+                on_slice = True
+            else:
+                if on_slice:
+                    slices.append(slice_on)
+                    slice_on = []
+                on_slice = False
+        if slice_on:
+            slices.append(slice_on)
+        return tuple([StormHistory(self._stormid, section) for section in slices])
+
     def __iter__(self):
         return iter(self._pts)
 
@@ -234,3 +264,4 @@ class StormHistory(object):
 
 StormId = namedtuple('StormId', 'basin number year name raw')
 BestTrackPoint = namedtuple('BestTrackPoint', 'storm timestamp ident status lat lon windspd pres')
+# Location = namedtuple('Location', 'lat lon')

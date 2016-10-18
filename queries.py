@@ -6,7 +6,7 @@ import calculations
 __author__ = 'tangz'
 
 
-class Query(object):
+class QueryBuilder(object):
     def __init__(self, accessor):
         self._accessor = accessor
 
@@ -82,30 +82,14 @@ class QueryingException(Exception):
     pass
 
 
-year = Query(lambda storm: storm.year)
-lifecycle = Query(lambda storm: storm.lifecycle)
+year = QueryBuilder(lambda storm: storm.year)
+lifecycle = QueryBuilder(lambda storm: storm.lifecycle)
 ishurricane = lifecycle.contains('HU')
 istropical = lifecycle.contains('HU', 'TS', 'TD')
 issubtropical = allof(lifecycle.contains('SS', 'SD'), noneof(istropical))
-max_intensity = Query(lambda storm: storm.max_wind_speed)
-min_pres = Query(lambda storm: storm.min_ctrl_pres)
-
-_SSHS_CATEGORIES = {1: 65, 2: 85, 3: 100, 4: 115, 5: 140}
-
-
-def _sshs_cat(storm):
-    if not ishurricane(storm):
-        return -1
-    elif storm.max_wind_speed >= _SSHS_CATEGORIES[5]:
-        return 5
-    else:
-        for cat in range(1, 5):
-            if _SSHS_CATEGORIES[cat] <= storm.max_wind_speed < _SSHS_CATEGORIES[cat + 1]:
-                return cat
-        raise QueryingException('Cannot find saffir-simpson category for windspeed: ' + storm.max_wind_speed)
-
-
-sshs_category = Query(_sshs_cat)
+max_intensity = QueryBuilder(lambda storm: storm.max_wind_speed)
+min_pres = QueryBuilder(lambda storm: storm.min_ctrl_pres)
+sshs_category = QueryBuilder(lambda storm: storm.max_sshs_category)
 ismajor = sshs_category.geq(3)
 
 
@@ -115,6 +99,6 @@ def _min_dist_from(latlonpt, storm):
 
 
 def distfrom(latlonpt):
-    return Query(lambda storm: _min_dist_from(latlonpt, storm))
+    return QueryBuilder(lambda storm: _min_dist_from(latlonpt, storm))
     # TODO: figure out why partials don't work in this case.
     # return Query(functools.partial(_min_dist_from, latlonpt=latlonpt))

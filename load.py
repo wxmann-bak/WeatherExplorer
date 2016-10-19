@@ -82,7 +82,7 @@ def parse_storm_title(row):
     storm_info = row[0].strip()
     storm_name = row[1].strip()
     lines = row[2].strip()
-    _log('Number of HURDAT rows in storm {0} ({1}): {2}'.format(storm_info, storm_name, lines))
+    # _log('Number of HURDAT rows in storm {0} ({1}): {2}'.format(storm_info, storm_name, lines))
 
     return storm_id(storm_info, storm_name)
 

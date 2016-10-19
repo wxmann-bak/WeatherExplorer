@@ -1,7 +1,7 @@
 from datetime import datetime
 import unittest
 
-from WeatherExplorer import load
+from WeatherExplorer.datasources import hurdat, atcf
 from WeatherExplorer.tcdata import StormId
 
 
@@ -15,7 +15,7 @@ class LoadTests(unittest.TestCase):
     def test_should_parse_storm_info(self):
         line = ['AL092011', '              IRENE', '     43', '']
 
-        storminfo = load.parse_storm_title(line)
+        storminfo = hurdat.parse_storm_title(line)
 
         self.assertEqual(storminfo.basin, 'AL')
         self.assertEqual(storminfo.name, 'IRENE')
@@ -27,7 +27,7 @@ class LoadTests(unittest.TestCase):
         line = ['20110821', ' 0000', '  ', ' TS', ' 15.0N', '  59.0W', '  45', ' 1006', '  105', '', '   0', '    0',
                 '   45', '    0', '    0', '    0', '    0', '   0', '    0', '   0', '    0', '']
 
-        bt = load.parse_storm_point(line, _DEFAULT_STORM)
+        bt = hurdat.parse_storm_point(line, _DEFAULT_STORM)
 
         self.assertEqual(bt.timestamp, datetime(year=2011, month=8, day=21, hour=0, minute=0))
         self.assertEqual(bt.ident, '')
@@ -42,7 +42,7 @@ class LoadTests(unittest.TestCase):
         line = ['20110821', ' 0000', '  ', ' TS', ' 15.0N', '  59.0W', '  45', ' -999', '  105', '', '   0', '    0',
                 '   45', '    0', '    0', '    0', '    0', '   0', '    0', '   0', '    0', '']
 
-        bt = load.parse_storm_point(line, _DEFAULT_STORM)
+        bt = hurdat.parse_storm_point(line, _DEFAULT_STORM)
 
         self.assertEqual(bt.timestamp, datetime(year=2011, month=8, day=21, hour=0, minute=0))
         self.assertEqual(bt.ident, '')

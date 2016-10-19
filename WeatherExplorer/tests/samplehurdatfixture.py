@@ -1,7 +1,7 @@
 import datetime
 
 from WeatherExplorer.tcdata import StormId, BestTrackPoint
-from WeatherExplorer.load import BasinBuilder
+from WeatherExplorer.datasources.loadtc_helper import BasinBuilder
 
 
 TEST_BASIN_FOR_TCDATA = 'AL'

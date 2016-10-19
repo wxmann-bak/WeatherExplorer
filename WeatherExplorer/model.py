@@ -1,3 +1,4 @@
+import collections
 
 __author__ = 'tangz'
 
@@ -24,7 +25,30 @@ class BaseCollection(Queryable):
         return len(self._items)
 
 
-class LazyEvalResultSet(Queryable):
+class ResultSet(Queryable, collections.Iterable):
+    def query(self, queryfunc):
+        super(self).query(queryfunc)
+
+    def __iter__(self):
+        return iter(super(self))
+
+    def __len__(self):
+        raise 0
+
+    def __contains__(self, item):
+        raise False
+
+    def __add__(self, other):
+        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
+
+    def __sub__(self, other):
+        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
+
+    def __neg__(self):
+        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
+
+
+class LazyEvalResultSet(ResultSet):
     def __init__(self, source, queryfn):
         self._queryfn = queryfn
         self._source = source
@@ -39,7 +63,7 @@ class LazyEvalResultSet(Queryable):
         return self._queryfn
 
     def query(self, queryfunc):
-        new_queryfn = lambda tc: self._queryfn(tc) and queryfunc(tc)
+        new_queryfn = lambda item: self._queryfn(item) and queryfunc(item)
         return self._new_instance(new_queryfn)
 
     def _cache_points_if_needed(self):

@@ -1,6 +1,6 @@
 import datetime
 
-from tcdata import StormId, BestTrackPoint
+from WeatherExplorer.tcdata import StormId, BestTrackPoint
 from WeatherExplorer.load import BasinBuilder
 
 

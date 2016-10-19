@@ -1,7 +1,7 @@
 import unittest
 
 from WeatherExplorer import queries
-from WeatherExplorer.test import samplehurdatfixture
+from WeatherExplorer.tests import samplehurdatfixture
 
 
 __author__ = 'tangz'

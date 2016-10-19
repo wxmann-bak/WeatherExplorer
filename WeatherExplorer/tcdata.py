@@ -1,18 +1,12 @@
 from collections import namedtuple
 from operator import attrgetter
-import collections
+
+from WeatherExplorer.model import BaseCollection, LazyEvalResultSet
 
 from WeatherExplorer.tcutils import sshs_category
 
 
-_NEED_TO_IMPLEMENT_THIS_MSG = 'Subclass must implement this'
-
 __author__ = 'tangz'
-
-
-class Queryable(object):
-    def query(self, queryfunc):
-        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
 
 
 class StormRetrievable(object):
@@ -20,36 +14,10 @@ class StormRetrievable(object):
         raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
 
 
-class TCResultSet(Queryable, StormRetrievable, collections.Iterable):
-    def __iter__(self):
-        collections.Iterable.__iter__(self)
-
-    def query(self, queryfunc):
-        return Queryable.query(self, queryfunc)
-
-    def get_tc(self, year, name=None, number=None):
-        return StormRetrievable.get_tc(self, year, name, number)
-
-    def __contains__(self, item):
-        return False
-
-    def __len__(self):
-        return 0
-
-    def __add__(self, other):
-        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
-
-    def __sub__(self, other):
-        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
-
-    def __neg__(self):
-        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
-
-
-class BasinHistory(Queryable, StormRetrievable):
+class BasinHistory(BaseCollection, StormRetrievable):
     def __init__(self, basin, storms):
+        BaseCollection.__init__(self, storms)
         self._basin = basin
-        self._storms = storms
         self._storms_by_year = BasinHistory._index_storms_by_year(storms)
 
     @staticmethod
@@ -87,67 +55,17 @@ class BasinHistory(Queryable, StormRetrievable):
                 return storm
         return None
 
-    def __iter__(self):
-        return iter(self._storms)
 
-    def __len__(self):
-        return len(self._storms)
-
-
-class _BasinQueryResult(TCResultSet):
+class _BasinQueryResult(LazyEvalResultSet, StormRetrievable):
     def __init__(self, basin_hist, queryfn):
-        self._queryfn = queryfn
-        self._basin_hist = basin_hist
-        self._saved_tcs = None
+        LazyEvalResultSet.__init__(self, basin_hist, queryfn)
 
-    @property
-    def source(self):
-        return self._basin_hist
-
-    @property
-    def query_func(self):
-        return self._queryfn
-
-    def query(self, queryfunc):
-        new_queryfn = lambda tc: self._queryfn(tc) and queryfunc(tc)
-        return _BasinQueryResult(self._basin_hist, new_queryfn)
+    def _new_instance(self, queryfn):
+        return _BasinQueryResult(self.source, queryfn)
 
     def get_tc(self, year, name=None, number=None):
-        possible_tc = self._basin_hist.get_tc(year, name, number)
+        possible_tc = self.source.get_tc(year, name, number)
         return possible_tc if self._queryfn(possible_tc) else None
-
-    def _cache_points_if_needed(self):
-        if self._saved_tcs is None:
-            self._saved_tcs = [tc for tc in self._basin_hist if self._queryfn(tc)]
-
-    def __iter__(self):
-        self._cache_points_if_needed()
-        return iter(self._saved_tcs)
-
-    def __len__(self):
-        self._cache_points_if_needed()
-        return len(self._saved_tcs)
-
-    def __contains__(self, tc):
-        self._cache_points_if_needed()
-        return tc in self._saved_tcs
-
-    def __add__(self, other):
-        self._check_common_source(other)
-        new_queryfn = lambda tc: self._queryfn(tc) or other.query_func(tc)
-        return _BasinQueryResult(self._basin_hist, new_queryfn)
-
-    def __sub__(self, other):
-        self._check_common_source(other)
-        new_queryfn = lambda tc: self._queryfn(tc) and not other.query_func(tc)
-        return _BasinQueryResult(self._basin_hist, new_queryfn)
-
-    def __neg__(self):
-        new_queryfn = lambda tc: not self._queryfn(tc)
-        return _BasinQueryResult(self._basin_hist, new_queryfn)
-
-    def _check_common_source(self, other):
-        assert self.source == other.source
 
 
 class StormHistory(object):

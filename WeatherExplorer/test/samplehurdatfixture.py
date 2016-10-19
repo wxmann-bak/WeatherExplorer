@@ -1,13 +1,15 @@
 import datetime
-from tcdata import BasinHistory, StormId, BestTrackPoint
-from load import BasinBuilder
+
+from tcdata import StormId, BestTrackPoint
+from WeatherExplorer.load import BasinBuilder
+
 
 TEST_BASIN_FOR_TCDATA = 'AL'
 
 __author__ = 'tangz'
 
 hurdat_for_queries = BasinBuilder('dummy')
-# combined snippets from real BT data
+# combined snippets from real BT files
 hurdat_for_queries += BestTrackPoint(storm=StormId(basin='AL', number=3, year=2000, name='ALBERTO', raw='AL032000'),
                                      timestamp=datetime.datetime(2000, 8, 3, 18, 0), ident='', status='TD', lat=10.8,
                                      lon=18.0, windspd=25, pres=1007)
@@ -58,7 +60,7 @@ hurdat_for_queries += BestTrackPoint(storm=StormId(basin='AL', number=2, year=20
 hurdat_for_queries = hurdat_for_queries.build()
 
 hurdat_for_tcdata = BasinBuilder(TEST_BASIN_FOR_TCDATA)
-# combined snippets from real BT data
+# combined snippets from real BT files
 hurdat_for_tcdata += BestTrackPoint(storm=StormId(basin='AL', number=3, year=2000, name='ALBERTO', raw='AL032000'),
                                     timestamp=datetime.datetime(2000, 8, 3, 18, 0), ident='', status='TD', lat=10.8,
                                     lon=18.0, windspd=25, pres=1007)

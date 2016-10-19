@@ -1,7 +1,9 @@
 from datetime import datetime
 import unittest
-import load
+
+from WeatherExplorer import load
 from tcdata import StormId
+
 
 __author__ = 'tangz'
 

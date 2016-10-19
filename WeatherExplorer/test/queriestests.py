@@ -1,7 +1,7 @@
 import unittest
 
-import queries
-from test import samplehurdatfixture
+from WeatherExplorer import queries
+from WeatherExplorer.test import samplehurdatfixture
 
 
 __author__ = 'tangz'
@@ -66,7 +66,7 @@ class QueriesTests(unittest.TestCase):
         self.assertEqual(len(filtered_storms), 2)
 
     def test_should_filter_by_both_year_and_strength(self):
-        from queries import year, allof, ishurricane
+        from WeatherExplorer.queries import year, allof, ishurricane
         filtered_storms = samplehurdatfixture.hurdat_for_queries.query(allof(year.eq(2000), ishurricane))
         for storm in filtered_storms:
             self.assertEqual(storm.year, 2000)
@@ -74,7 +74,7 @@ class QueriesTests(unittest.TestCase):
         self.assertEqual(len(filtered_storms), 1)
 
     def test_should_filter_by_both_year_or_strength(self):
-        from queries import year, anyof, ishurricane
+        from WeatherExplorer.queries import year, anyof, ishurricane
         filtered_storms = samplehurdatfixture.hurdat_for_queries.query(anyof(year.eq(2000), ishurricane))
         for storm in filtered_storms:
             self.assertTrue(storm.year == 2000 or 'HU' in storm.lifecycle)

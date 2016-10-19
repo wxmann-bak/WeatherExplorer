@@ -1,6 +1,6 @@
 import sys
 
-import load
+from WeatherExplorer import load
 
 
 __author__ = 'tangz'

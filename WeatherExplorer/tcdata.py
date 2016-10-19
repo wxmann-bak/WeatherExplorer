@@ -2,7 +2,7 @@ from collections import namedtuple
 from operator import attrgetter
 import collections
 
-from tcutils import sshs_category
+from WeatherExplorer.tcutils import sshs_category
 
 
 _NEED_TO_IMPLEMENT_THIS_MSG = 'Subclass must implement this'

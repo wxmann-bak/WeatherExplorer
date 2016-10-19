@@ -1,6 +1,6 @@
 import operator
 
-import calculations
+from WeatherExplorer import calculations
 
 
 __author__ = 'tangz'

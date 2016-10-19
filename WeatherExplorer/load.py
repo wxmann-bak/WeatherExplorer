@@ -2,7 +2,7 @@ import csv
 from datetime import datetime
 import re
 
-from tcdata import BestTrackPoint, BasinHistory, StormHistory, StormId
+from WeatherExplorer.tcdata import BestTrackPoint, BasinHistory, StormHistory, StormId
 
 
 __author__ = 'tangz'

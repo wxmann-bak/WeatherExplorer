@@ -1,9 +1,9 @@
 import datetime
 import unittest
-import queries
 
-from tcdata import StormHistory, BasinHistory
-from test import samplehurdatfixture
+from WeatherExplorer import queries
+from WeatherExplorer.tcdata import StormHistory, BasinHistory
+from WeatherExplorer.test import samplehurdatfixture
 
 
 __author__ = 'tangz'

@@ -1,12 +1,14 @@
 from collections import namedtuple
 from operator import attrgetter
 
-from WeatherExplorer.model import BaseCollection, LazyEvalResultSet
+from WeatherExplorer.base import BaseCollection, LazyEvalResultSet
 
 from WeatherExplorer.tcutils import sshs_category
 
 
 __author__ = 'tangz'
+
+_NEED_TO_IMPLEMENT_THIS_MSG = 'Subclass needs to implement this'
 
 
 class StormRetrievable(object):

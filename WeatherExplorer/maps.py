@@ -25,7 +25,7 @@ class MapArea(object):
         self.dlon_labels = dlon_labels
         self.resolution = resolution
 
-    def draw_map(self):
+    def make_map(self):
         m = Basemap(projection=self._projection, llcrnrlon=self._ll_coords[1], llcrnrlat=self._ll_coords[0],
                     urcrnrlon=self._ur_coords[1], urcrnrlat=self._ur_coords[0], resolution=self.resolution)
         m.drawcoastlines()
@@ -39,12 +39,13 @@ class MapArea(object):
 atlantic_basin = MapArea('cyl', (5.0, -105.0), (60.0, -5.0), 10, 15)
 
 
-def plot_on_map(map_area, title, storms, **kwargs):
-    m = map_area.draw_map()
+def plot_on_map(map_area, title, storms, only_classifiable=True, **kwargs):
+    m = map_area.make_map()
     storms_to_plot = (storms,) if isinstance(storms, tcdata.StormHistory) else storms
     for storm in storms_to_plot:
-        all_lat = [datapoint.lat for datapoint in storm.classifiable()]
-        all_lon = [datapoint.lon for datapoint in storm.classifiable()]
+        exact_storm = storm.classifiable() if only_classifiable else storm
+        all_lat = [datapoint.lat for datapoint in exact_storm]
+        all_lon = [datapoint.lon for datapoint in exact_storm]
         x, y = m(all_lon, all_lat)
         m.plot(x, y, **kwargs)
     if title:

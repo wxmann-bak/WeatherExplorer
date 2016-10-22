@@ -1,5 +1,3 @@
-from WeatherExplorer import maps
-
 #########################################################################
 # Much of the code in this module is adapted from the samples found here:
 # http://matplotlib.org/basemap/users/examples.html
@@ -12,7 +10,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import addcyclic
 from scipy.ndimage.filters import minimum_filter, maximum_filter
-from netCDF4 import Dataset
 
 
 def extrema(mat, mode='wrap', window=10):
@@ -34,8 +31,8 @@ def plot_slp_extrema(map_obj, x, y, data, low_color='r', high_color='b', window=
     highvals = data[found_maxes]
 
     # don't plot if there is already a L or H within dmin meters.
-    plabel_offset = 0.022 * (map_obj.ymax - map_obj.ymin)
-    dmin = plabel_offset
+    plabel_offset = 0.015 * (map_obj.ymax - map_obj.ymin)
+    dmin = plabel_offset * 2
 
     def r(pt1, pt2):
         return np.sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2)
@@ -46,7 +43,7 @@ def plot_slp_extrema(map_obj, x, y, data, low_color='r', high_color='b', window=
             if map_obj.xmax > xval > map_obj.xmin and map_obj.ymax > yval > map_obj.ymin:
                 dist = [r((xval, yval), point) for point in xyplotted]
                 if not dist or min(dist) > dmin:
-                    plt.text(xval, yval, ident, fontsize=14, fontweight='bold',
+                    plt.text(xval, yval, ident, fontsize=18, fontweight='bold',
                              ha='center', va='center', color=label_color)
                     plt.text(xval, yval - plabel_offset, repr(int(extremaval)), fontsize=9,
                              ha='center', va='top', color=label_color,
@@ -91,8 +88,10 @@ class ModelOutput(object):
         m = self.area.make_map()
         # add wrap-around point in longitude.
         prmsl, lons = addcyclic(prmsl, self._lons)
-        countour_lvls = np.arange(900, 1100., contour_intrv)
+        countour_lvls = np.arange(900, 1080., contour_intrv)
         lons, lats = np.meshgrid(lons, self._lats)
+        # adjust longitude point mismatch for negative values in map
+        lons, prmsl = m.shiftdata(lons, datain=prmsl)
         x, y = m(lons, lats)
         m.contour(x, y, prmsl, countour_lvls, colors='k', linewidths=1.)
         plot_slp_extrema(m, x, y, prmsl, window=window)
@@ -100,7 +99,3 @@ class ModelOutput(object):
         plt.title(title)
         plt.show()
         return self._fignum
-
-
-#gfs = Dataset("http://nomads.ncep.noaa.gov:9090/dods/gfs_0p50/gfs20161020/gfs_0p50_12z")
-#ModelOutput(gfs, maps.atlantic_basin).mslp(contour_intrv=2.5, title='MSLP 12Z GFS')

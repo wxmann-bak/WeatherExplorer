@@ -5,40 +5,64 @@ import numpy as np
 __author__ = 'tangz'
 
 
-class MapArea(object):
-    @classmethod
-    def centered(cls, loc, lat_delta=10, lon_delta=10, projection='cyl', resolution='i'):
-        ll_coords = (loc[0] - lat_delta, loc[1] - lon_delta)
-        ur_coords = (loc[0] + lat_delta, loc[1] + lon_delta)
-        dlat_labels = lat_delta / 2
-        dlon_labels = lon_delta / 2
-        return cls(projection, ll_coords, ur_coords, dlat_labels, dlon_labels, resolution)
+def world_cyl(lonctr=0, dlat_labels=20, dlon_labels=20, resolution='l'):
+    llcrnrlon, urcrnrlon = lonctr - 180, lonctr + 180
+    llcrnrlat, urcrnrlat = -90, 90
+    m = Basemap(projection='cyl', llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
+                urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat, resolution=resolution, area_thresh=1000)
+    return MapWrapper(m, dlat_labels, dlon_labels, resolution)
 
-    def __init__(self, projection, ll_coords, ur_coords, dlat_labels, dlon_labels, resolution='l'):
-        self._projection = projection
-        self._ll_coords = ll_coords
-        self._ur_coords = ur_coords
+
+def world_ortho(ctr, dlat_labels=20, dlon_labels=20, resolution='l'):
+    m = Basemap(projection='ortho', lat_0=ctr[0], lon_0=ctr[1], area_thresh=1000)
+    return MapWrapper(m, dlat_labels, dlon_labels, resolution)
+
+
+def region_cyl(lowerleft, upperright, dlat_labels=10, dlon_labels=10, resolution='l'):
+    llcrnrlon, urcrnrlon = lowerleft[1], upperright[1]
+    llcrnrlat, urcrnrlat = lowerleft[0], upperright[0]
+    m = Basemap(projection='cyl', llcrnrlon=llcrnrlon, llcrnrlat=llcrnrlat,
+                urcrnrlon=urcrnrlon, urcrnrlat=urcrnrlat, resolution=resolution, area_thresh=1000)
+    return MapWrapper(m, dlat_labels, dlon_labels, resolution)
+
+
+def lcc(ctr, width, height, dlat_labels=10, dlon_labels=10, resolution='l'):
+    m = Basemap(projection='lcc', lat_0=ctr[0], lon_0=ctr[1], width=width, height=height, resolution=resolution,
+                area_thresh=1000)
+    return MapWrapper(m, dlat_labels, dlon_labels, resolution)
+
+
+def nhem(lon0, dlat_labels=20, dlon_labels=20, resolution='l'):
+    m = Basemap(projection='npstere', lon_0=lon0, boundinglat=10, resolution=resolution, area_thresh=1000)
+    return MapWrapper(m, dlat_labels, dlon_labels, resolution, draw_labels=False)
+
+
+class MapWrapper(object):
+    def __init__(self, m, dlat_labels=None, dlon_labels=None, resolution='l', draw_labels=True):
+        self._map = m
         self.dlat_labels = dlat_labels
         self.dlon_labels = dlon_labels
         self.resolution = resolution
+        self.draw_labels = draw_labels
 
-    def _negative_lon_workaround(self, coordinate):
-        if coordinate[1] < 0:
-            new_lon = 360 + coordinate[1]
-            return coordinate[0], new_lon
-        return coordinate[0], coordinate[1]
+    @property
+    def map(self):
+        return self._map
 
     def make_map(self):
-        llcrnrlat, llcrnlon = self._negative_lon_workaround(self._ll_coords)
-        urcrnlat, urcrnlon = self._negative_lon_workaround(self._ur_coords)
-        m = Basemap(projection=self._projection, llcrnrlon=llcrnlon, llcrnrlat=llcrnrlat,
-                    urcrnrlon=urcrnlon, urcrnrlat=urcrnlat, resolution=self.resolution)
-        m.drawcoastlines()
-        m.drawcountries()
-        m.drawstates()
-        m.drawparallels(np.arange(-90, 90, self.dlat_labels), labels=[1, 0, 0, 1])
-        m.drawmeridians(np.arange(0, 360, self.dlon_labels), labels=[1, 0, 0, 1])
-        return m
+        self._map.drawcoastlines()
+        self._map.drawcountries()
+        self._map.drawstates()
+        if self.dlat_labels:
+            labels = [1, 0, 0, 0] if self.draw_labels else [0, 0, 0, 0]
+            self._map.drawparallels(np.arange(-90, 90, self.dlat_labels), labels=labels)
+        if self.dlon_labels:
+            labels = [0, 0, 0, 1] if self.draw_labels else [0, 0, 0, 0]
+            self._map.drawmeridians(np.arange(-180, 180, self.dlon_labels), labels=labels)
+        return self.map
 
 
-atlantic_basin = MapArea('cyl', (5.0, -105.0), (60.0, -5.0), 10, 15)
+atlantic_basin = region_cyl((5.0, -105.0), (60.0, -5.0), dlat_labels=10, dlon_labels=15)
+north_america = lcc((45, -100), width=10000000, height=8500000, resolution='l')
+nhem_us = nhem(-100)
+conus = region_cyl((20, -130), (55, -65), dlat_labels=10, dlon_labels=10, resolution='i')

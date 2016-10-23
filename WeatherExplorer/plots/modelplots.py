@@ -62,82 +62,79 @@ def gpm_to_dam(gpm):
     return gpm * 0.1
 
 
-class ModelOutput(object):
+class CoardsNetcdfPlotter(object):
     def __init__(self, modeldata, area):
-        self.area = area
+        self._area = area
+        self._map = area.map
         self._data = modeldata
         self._lats = modeldata.variables['lat'][:]
         self._lons = modeldata.variables['lon'][:]
         self._times = modeldata.variables['time'][:]
+        self._map_drawn = False
         self._fignum = 1
-        self._plotted_figs = []
 
-    def _track_fig(self):
-        while self._fignum in self._plotted_figs:
-            self._fignum += 1
-        self._plotted_figs.append(self._fignum)
-        plt.figure(self._fignum)
+    @property
+    def maparea(self):
+        return self._area
 
-    def saved(self, fig):
-        if fig in self._plotted_figs:
-            plt.figure(fig)
-            plt.show()
-        return None
+    @maparea.setter
+    def maparea(self, area):
+        self._area = area
+        self._map = area.map
+        self.newplot()
+
+    def newplot(self):
+        self._map_drawn = False
+        self._fignum += 1
+
+    def _prune_geogr_data(self, plotdata):
+        # add wrap-around point in longitude.
+        reviseddata, lons = addcyclic(plotdata, self._lons)
+        lons, lats = np.meshgrid(lons, self._lats)
+        # adjust longitude point mismatch for negative values in map
+        lons, reviseddata = self._map.shiftdata(lons, datain=reviseddata)
+        return lons, lats, reviseddata
+
+    def _hr_to_arrindex(self, hr):
+        # TODO: is there an attribute in the netcdf data that specifies the number?
+        return hr // 3
+
+    def _draw_init(self):
+        if not self._map_drawn:
+            plt.figure(self._fignum)
+            self._area.make_map()
+            self._map_drawn = True
 
     # the window parameter controls the number of highs and lows detected.
     # (higher value, fewer highs and lows)
-    def mslp(self, countour_intrvl, title, hr=0, window=40):
-        self._track_fig()
-        index = hr/3
-        prmsl = to_hPa(self._data.variables['prmslmsl'][index])
+    def mslp(self, hr=0, contour_int=5, window=40):
+        index = self._hr_to_arrindex(hr)
+        plotdata = to_hPa(self._data.variables['prmslmsl'][index])
+        lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
-        m = self.area.make_map()
-        # add wrap-around point in longitude.
-        prmsl, lons = addcyclic(prmsl, self._lons)
-        countour_lvls = np.arange(900, 1080., countour_intrvl)
-        lons, lats = np.meshgrid(lons, self._lats)
-        # adjust longitude point mismatch for negative values in map
-        lons, prmsl = m.shiftdata(lons, datain=prmsl)
-        x, y = m(lons, lats)
-        m.contour(x, y, prmsl, countour_lvls, colors='k', linewidths=1.)
-        plot_slp_extrema(m, x, y, prmsl, window=window)
-
-        plt.title(title)
-        plt.show()
-        return self._fignum
+        self._draw_init()
+        x, y = self._map(lons, lats)
+        contour_lvls = np.arange(900, 1080., contour_int)
+        self._map.contour(x, y, plotdata, contour_lvls, colors='k', linewidths=1.)
+        plot_slp_extrema(self._map, x, y, plotdata, window=window)
 
     def geoptnl_hgt(self, hr=0):
-        # self._track_fig()
-        index = hr/3
+        index = self._hr_to_arrindex(hr)
         plotdata = gpm_to_dam(self._data.variables['hgtprs'][index][12])
+        lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
-        m = self.area.make_map()
-        plotdata, lons = addcyclic(plotdata, self._lons)
-        countour_lvls = np.arange(462, 606, 6)
-        lons, lats = np.meshgrid(lons, self._lats)
-        # adjust longitude point mismatch for negative values in map
-        lons, plotdata = m.shiftdata(lons, datain=plotdata)
-        x, y = m(lons, lats)
-        CS = m.contour(x, y, plotdata, countour_lvls, colors='k', linewidths=1.)
-        plt.clabel(CS, countour_lvls, fontsize=10, fmt='%1.0f', inline_spacing=-2)
-        #
-        # plt.title(title)
-        # plt.show()
-        # return self._fignum
+        self._draw_init()
+        x, y = self._map(lons, lats)
+        contour_lvls = np.arange(462, 606, 6)
+        CS = self._map.contour(x, y, plotdata, contour_lvls, colors='k', linewidths=1.)
+        plt.clabel(CS, contour_lvls, fontsize=10, fmt='%1.0f', inline_spacing=-2)
 
     def absvort(self, hr=0):
-        # self._track_fig()
-        index = hr/3
+        index = self._hr_to_arrindex(hr)
         plotdata = self._data.variables['absvprs'][index][12]
+        lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
-        m = self.area.make_map()
-        plotdata, lons = addcyclic(plotdata, self._lons)
-        countour_lvls = np.arange(10e-5, 70e-5, 2e-5)
-        lons, lats = np.meshgrid(lons, self._lats)
-        # adjust longitude point mismatch for negative values in map
-        lons, plotdata = m.shiftdata(lons, datain=plotdata)
-        x, y = m(lons, lats)
-        m.contourf(x, y, plotdata, countour_lvls, cmap=plt.get_cmap('hot_r'))
-        #
-        # plt.show()
-        # return self._fignum
+        self._draw_init()
+        contour_lvls = np.arange(10e-5, 70e-5, 2e-5)
+        x, y = self._map(lons, lats)
+        self._map.contourf(x, y, plotdata, contour_lvls, cmap='hot_r')

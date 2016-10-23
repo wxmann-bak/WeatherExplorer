@@ -70,6 +70,7 @@ class CoardsNetcdfPlotter(object):
         self._lats = modeldata.variables['lat'][:]
         self._lons = modeldata.variables['lon'][:]
         self._times = modeldata.variables['time'][:]
+        self._lvls = modeldata.variables['lev'][:]
         self._map_drawn = False
         self._fignum = 1
 
@@ -96,14 +97,18 @@ class CoardsNetcdfPlotter(object):
         return lons, lats, reviseddata
 
     def _hr_to_arrindex(self, hr):
-        # TODO: is there an attribute in the netcdf data that specifies the number?
-        return hr // 3
+        days_from_t0 = hr / 24
+        t0 = self._times[0]
+        return list(self._times).index(t0 + days_from_t0)
 
     def _draw_init(self):
         if not self._map_drawn:
             plt.figure(self._fignum)
             self._area.make_map()
             self._map_drawn = True
+
+    def _lvl_to_arrindex(self, lvl):
+        return list(self._lvls).index(lvl)
 
     # the window parameter controls the number of highs and lows detected.
     # (higher value, fewer highs and lows)
@@ -118,23 +123,25 @@ class CoardsNetcdfPlotter(object):
         self._map.contour(x, y, plotdata, contour_lvls, colors='k', linewidths=1.)
         plot_slp_extrema(self._map, x, y, plotdata, window=window)
 
-    def geoptnl_hgt(self, hr=0):
-        index = self._hr_to_arrindex(hr)
-        plotdata = gpm_to_dam(self._data.variables['hgtprs'][index][12])
+    def geoptnl_hgt(self, lvl, hr=0):
+        hrindex = self._hr_to_arrindex(hr)
+        lvlindex = self._lvl_to_arrindex(lvl)
+        plotdata = gpm_to_dam(self._data.variables['hgtprs'][hrindex][lvlindex])
         lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
         self._draw_init()
         x, y = self._map(lons, lats)
-        contour_lvls = np.arange(462, 606, 6)
+        contour_lvls = np.arange(462, 606., 6)
         CS = self._map.contour(x, y, plotdata, contour_lvls, colors='k', linewidths=1.)
-        plt.clabel(CS, contour_lvls, fontsize=10, fmt='%1.0f', inline_spacing=-2)
+        plt.clabel(CS, contour_lvls, fontsize=9, fmt='%1.0f', inline_spacing=-3)
 
-    def absvort(self, hr=0):
-        index = self._hr_to_arrindex(hr)
-        plotdata = self._data.variables['absvprs'][index][12]
+    def absvort(self, lvl, hr=0):
+        hrindex = self._hr_to_arrindex(hr)
+        lvlindex = self._lvl_to_arrindex(lvl)
+        plotdata = self._data.variables['absvprs'][hrindex][lvlindex]
         lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
         self._draw_init()
-        contour_lvls = np.arange(10e-5, 70e-5, 2e-5)
+        contour_lvls = np.arange(10e-5, 60e-5, 2e-5)
         x, y = self._map(lons, lats)
-        self._map.contourf(x, y, plotdata, contour_lvls, cmap='hot_r')
+        self._map.contourf(x, y, plotdata, contour_lvls, cmap='hot_r', extend='both')

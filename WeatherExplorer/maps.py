@@ -63,6 +63,6 @@ class MapWrapper(object):
 
 
 atlantic_basin = region_cyl((5.0, -105.0), (60.0, -5.0), dlat_labels=10, dlon_labels=15)
-north_america = lcc((45, -100), width=10000000, height=8500000, resolution='l')
+north_america = lcc((45, -100), width=11000000, height=8500000, resolution='l')
 nhem_us = nhem(-100)
 conus = region_cyl((20, -130), (55, -65), dlat_labels=10, dlon_labels=10, resolution='i')

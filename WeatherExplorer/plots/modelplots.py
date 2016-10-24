@@ -54,12 +54,17 @@ def plot_slp_extrema(map_obj, x, y, data, low_color='r', high_color='b', window=
     plot_labels(xhighs, yhighs, highvals, 'H', high_color)
 
 
-def to_hPa(pa):
+def pa_to_hPa(pa):
     return pa * 0.01
 
 
 def gpm_to_dam(gpm):
     return gpm * 0.1
+
+
+def to_mmhr(kgm2s1):
+    return 3600 * kgm2s1
+    # to inches: add * 0.03937
 
 
 class CoardsNetcdfPlotter(object):
@@ -112,32 +117,37 @@ class CoardsNetcdfPlotter(object):
 
     # the window parameter controls the number of highs and lows detected.
     # (higher value, fewer highs and lows)
-    def mslp(self, hr=0, contour_int=5, window=40):
+    def mslp(self, hr=0, contour_delta=4, window=30):
         index = self._hr_to_arrindex(hr)
-        plotdata = to_hPa(self._data.variables['prmslmsl'][index])
+        plotdata = pa_to_hPa(self._data.variables['prmslmsl'][index])
         lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
         self._draw_init()
         x, y = self._map(lons, lats)
-        contour_lvls = np.arange(900, 1080., contour_int)
+        contour_lvls = np.arange(900, 1080., contour_delta)
         self._map.contour(x, y, plotdata, contour_lvls, colors='k', linewidths=1.)
         plot_slp_extrema(self._map, x, y, plotdata, window=window)
 
-    def geoptnl_hgt(self, lvl, hr=0):
+    def geoptnl_hgt(self, lev, hr=0, contour_delta=6):
         hrindex = self._hr_to_arrindex(hr)
-        lvlindex = self._lvl_to_arrindex(lvl)
+        lvlindex = self._lvl_to_arrindex(lev)
         plotdata = gpm_to_dam(self._data.variables['hgtprs'][hrindex][lvlindex])
         lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
+        mindata = np.amin(plotdata)
+        maxdata = np.amax(plotdata)
+        min_contour = contour_delta * (mindata // contour_delta)
+        max_contour = contour_delta * (maxdata // contour_delta) + contour_delta
+        contour_lvls = np.arange(min_contour, max_contour, contour_delta)
+
         self._draw_init()
         x, y = self._map(lons, lats)
-        contour_lvls = np.arange(462, 606., 6)
         CS = self._map.contour(x, y, plotdata, contour_lvls, colors='k', linewidths=1.)
         plt.clabel(CS, contour_lvls, fontsize=9, fmt='%1.0f', inline_spacing=-3)
 
-    def absvort(self, lvl, hr=0):
+    def absvort(self, lev, hr=0):
         hrindex = self._hr_to_arrindex(hr)
-        lvlindex = self._lvl_to_arrindex(lvl)
+        lvlindex = self._lvl_to_arrindex(lev)
         plotdata = self._data.variables['absvprs'][hrindex][lvlindex]
         lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
@@ -145,3 +155,16 @@ class CoardsNetcdfPlotter(object):
         contour_lvls = np.arange(10e-5, 60e-5, 2e-5)
         x, y = self._map(lons, lats)
         self._map.contourf(x, y, plotdata, contour_lvls, cmap='hot_r', extend='both')
+
+    def precip_rate(self, hr=0):
+        hrindex = self._hr_to_arrindex(hr)
+        plotdata = to_mmhr(self._data.variables['pratesfc'][hrindex])
+        lons, lats, plotdata = self._prune_geogr_data(plotdata)
+
+        self._draw_init()
+        contour_lvls = np.arange(0.1, 18, 0.1)
+        x, y = self._map(lons, lats)
+        CS = self._map.contourf(x, y, plotdata, contour_lvls, cmap='RdYlGn_r', extend='max')
+
+        ticks = [min(contour_lvls)] + [i for i in range(1, int(max(contour_lvls)) + 1)]
+        plt.colorbar(CS, ticks=ticks, label='Precipitation Rate (mm/hr)')

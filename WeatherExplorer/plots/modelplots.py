@@ -67,6 +67,10 @@ def to_mmhr(kgm2s1):
     # to inches: add * 0.03937
 
 
+def to_in(kgm2):
+    return kgm2 / 1000 * 39.3701
+
+
 class CoardsNetcdfPlotter(object):
     def __init__(self, modeldata, area):
         self._area = area
@@ -168,3 +172,16 @@ class CoardsNetcdfPlotter(object):
 
         ticks = [min(contour_lvls)] + [i for i in range(1, int(max(contour_lvls)) + 1)]
         plt.colorbar(CS, ticks=ticks, label='Precipitation Rate (mm/hr)')
+
+    def accum_precip(self, hr=0):
+        hrindex = self._hr_to_arrindex(hr)
+        plotdata = to_in(self._data.variables['apcpsfc'][hrindex])
+        lons, lats, plotdata = self._prune_geogr_data(plotdata)
+
+        self._draw_init()
+        contour_lvls = np.arange(0.02, 3.6, 0.05)
+        x, y = self._map(lons, lats)
+        CS = self._map.contourf(x, y, plotdata, contour_lvls, cmap='RdYlGn_r', extend='max')
+
+        ticks = [0.1, 0.5, 1, 1.5, 2, 2.5, 3, 3.5]
+        plt.colorbar(CS, ticks=ticks, label='Precipitation Total (in)')

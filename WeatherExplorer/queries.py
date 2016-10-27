@@ -94,7 +94,7 @@ ismajor = sshs_category.geq(3)
 
 
 def _min_dist_from(latlonpt, storm):
-    distances = [calculations.dist_mi(latlonpt, (storm_pt.lat, storm_pt.lon)) for storm_pt in storm]
+    distances = [calculations.dist(latlonpt, (storm_pt.lat, storm_pt.lon)) for storm_pt in storm]
     return min(distances)
 
 

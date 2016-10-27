@@ -5,30 +5,22 @@
 # Many thanks to the MatplotLib community for their examples.
 # This would not be possible with it.
 #########################################################################
+from datetime import timedelta
 
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import addcyclic
-from scipy.ndimage.filters import minimum_filter, maximum_filter
 
-
-def extrema(mat, mode='wrap', window=10):
-    """find the indices of local extrema (min and max)
-    in the input array."""
-    mn = minimum_filter(mat, size=window, mode=mode)
-    mx = maximum_filter(mat, size=window, mode=mode)
-    # (mat == mx) true if pixel is equal to the local max
-    # (mat == mn) true if pixel is equal to the local in
-    # Return the indices of the maxima, minima
-    return np.nonzero(mat == mn), np.nonzero(mat == mx)
+from WeatherExplorer import calculations
 
 
 def plot_slp_extrema(map_obj, x, y, data, low_color='r', high_color='b', window=20):
-    found_mins, found_maxes = extrema(data, mode='wrap', window=window)
+    found_maxes, highvals = calculations.maxima(data, window=window)
+    found_mins, lowvals = calculations.minima(data, window=window)
     xlows, ylows = x[found_mins], y[found_mins]
     xhighs, yhighs = x[found_maxes], y[found_maxes]
-    lowvals = data[found_mins]
-    highvals = data[found_maxes]
+    # lowvals = data[found_mins]
+    # highvals = data[found_maxes]
 
     # don't plot if there is already a L or H within dmin meters.
     plabel_offset = 0.015 * (map_obj.ymax - map_obj.ymin)
@@ -76,10 +68,6 @@ class CoardsNetcdfPlotter(object):
         self._area = area
         self._map = area.map
         self._data = modeldata
-        self._lats = modeldata.variables['lat'][:]
-        self._lons = modeldata.variables['lon'][:]
-        self._times = modeldata.variables['time'][:]
-        self._lvls = modeldata.variables['lev'][:]
         self._map_drawn = False
         self._fignum = 1
 
@@ -99,16 +87,11 @@ class CoardsNetcdfPlotter(object):
 
     def _prune_geogr_data(self, plotdata):
         # add wrap-around point in longitude.
-        reviseddata, lons = addcyclic(plotdata, self._lons)
-        lons, lats = np.meshgrid(lons, self._lats)
+        reviseddata, lons = addcyclic(plotdata, self._data.lons)
+        lons, lats = np.meshgrid(lons, self._data.lats)
         # adjust longitude point mismatch for negative values in map
         lons, reviseddata = self._map.shiftdata(lons, datain=reviseddata)
         return lons, lats, reviseddata
-
-    def _hr_to_arrindex(self, hr):
-        days_from_t0 = hr / 24
-        t0 = self._times[0]
-        return list(self._times).index(t0 + days_from_t0)
 
     def _draw_init(self):
         if not self._map_drawn:
@@ -116,14 +99,15 @@ class CoardsNetcdfPlotter(object):
             self._area.make_map()
             self._map_drawn = True
 
-    def _lvl_to_arrindex(self, lvl):
-        return list(self._lvls).index(lvl)
+    def _abs_time(self, hrs_from_t0):
+        t0 = self._data.times[0]
+        t_targ = t0 + timedelta(hours=hrs_from_t0)
+        return t_targ
 
     # the window parameter controls the number of highs and lows detected.
     # (higher value, fewer highs and lows)
     def mslp(self, hr=0, contour_delta=4, window=30):
-        index = self._hr_to_arrindex(hr)
-        plotdata = pa_to_hPa(self._data.variables['prmslmsl'][index])
+        plotdata = pa_to_hPa(self._data.var('prmslmsl').values(time=self._abs_time(hr)))
         lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
         self._draw_init()
@@ -133,9 +117,7 @@ class CoardsNetcdfPlotter(object):
         plot_slp_extrema(self._map, x, y, plotdata, window=window)
 
     def geoptnl_hgt(self, lev, hr=0, contour_delta=6):
-        hrindex = self._hr_to_arrindex(hr)
-        lvlindex = self._lvl_to_arrindex(lev)
-        plotdata = gpm_to_dam(self._data.variables['hgtprs'][hrindex][lvlindex])
+        plotdata = gpm_to_dam(self._data.var('hgtprs').values(time=self._abs_time(hr), lev=lev))
         lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
         mindata = np.amin(plotdata)
@@ -150,9 +132,7 @@ class CoardsNetcdfPlotter(object):
         plt.clabel(CS, contour_lvls, fontsize=9, fmt='%1.0f', inline_spacing=-3)
 
     def absvort(self, lev, hr=0):
-        hrindex = self._hr_to_arrindex(hr)
-        lvlindex = self._lvl_to_arrindex(lev)
-        plotdata = self._data.variables['absvprs'][hrindex][lvlindex]
+        plotdata = self._data.var('absvprs').values(time=self._abs_time(hr), lev=lev)
         lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
         self._draw_init()
@@ -160,22 +140,21 @@ class CoardsNetcdfPlotter(object):
         x, y = self._map(lons, lats)
         self._map.contourf(x, y, plotdata, contour_lvls, cmap='hot_r', extend='both')
 
-    def precip_rate(self, hr=0):
-        hrindex = self._hr_to_arrindex(hr)
-        plotdata = to_mmhr(self._data.variables['pratesfc'][hrindex])
-        lons, lats, plotdata = self._prune_geogr_data(plotdata)
-
-        self._draw_init()
-        contour_lvls = np.arange(0.1, 18, 0.1)
-        x, y = self._map(lons, lats)
-        CS = self._map.contourf(x, y, plotdata, contour_lvls, cmap='RdYlGn_r', extend='max')
-
-        ticks = [min(contour_lvls)] + [i for i in range(1, int(max(contour_lvls)) + 1)]
-        plt.colorbar(CS, ticks=ticks, label='Precipitation Rate (mm/hr)')
+    # def precip_rate(self, hr=0):
+    #     hrindex = self._hr_to_arrindex(hr)
+    #     plotdata = to_mmhr(self._data.variables['pratesfc'][hrindex])
+    #     lons, lats, plotdata = self._prune_geogr_data(plotdata)
+    #
+    #     self._draw_init()
+    #     contour_lvls = np.arange(0.1, 18, 0.1)
+    #     x, y = self._map(lons, lats)
+    #     CS = self._map.contourf(x, y, plotdata, contour_lvls, cmap='RdYlGn_r', extend='max')
+    #
+    #     ticks = [min(contour_lvls)] + [i for i in range(1, int(max(contour_lvls)) + 1)]
+    #     plt.colorbar(CS, ticks=ticks, label='Precipitation Rate (mm/hr)')
 
     def accum_precip(self, hr=0):
-        hrindex = self._hr_to_arrindex(hr)
-        plotdata = to_in(self._data.variables['apcpsfc'][hrindex])
+        plotdata = to_in(self._data.var('apcpsfc').values(time=self._abs_time(hr)))
         lons, lats, plotdata = self._prune_geogr_data(plotdata)
 
         self._draw_init()

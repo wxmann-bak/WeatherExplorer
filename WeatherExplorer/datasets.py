@@ -1,5 +1,4 @@
 import netCDF4 as nc
-from WeatherExplorer import calculations
 
 __author__ = 'tangz'
 
@@ -39,7 +38,7 @@ class GradsDataset(object):
         plevel_aware = 'lev' in vardata.dimensions
         time_aware = 'time' in vardata.dimensions
         latlon_aware = 'lat' in vardata.dimensions and 'lon' in vardata.dimensions
-        return _VarWrapper(vardata[:], self,
+        return _VarWrapper(vardata, self,
                            time_aware=time_aware,
                            plevel_aware=plevel_aware,
                            latlon_aware=latlon_aware)
@@ -53,15 +52,45 @@ class _VarWrapper(object):
         self._latlon_aware = latlon_aware
         self._plevel_aware = plevel_aware
 
+    @property
+    def wrapped(self):
+        return self._vardata
+
+    def _indices(self, time, lev, latlon):
+        timeindex, levindex, latindex, lonindex = None, None, None, None
+        if time is not None:
+            timeindex = self._parent.times.index(time)
+        if lev is not None:
+            levindex = self._parent.plevels.tolist().index(lev)
+        if latlon is not None:
+            lat, lon = latlon[0], latlon[1]
+            latindex = self._parent.lats.tolist().index(lat)
+            lonindex = self._parent.lons.tolist().index(lon)
+        return timeindex, levindex, latindex, lonindex
+
     def values(self, time=None, lev=None, latlon=None):
-        data_to_return = self._vardata
-        if self._time_aware and time is not None:
-            data_to_return = data_to_return[self._parent.times.index(time)]
-            if self._plevel_aware and lev is not None:
-                data_to_return = data_to_return[self._parent.plevels.tolist().index(lev)]
-                if self._latlon_aware and latlon is not None:
-                    all_latlons = [(lat, lon) for lat in self._parent.lats for lon in self._parent.lons]
-                    closest = calculations.closest_node(latlon, all_latlons)
-                    closest_lat, closest_lon = closest[0], closest[1]
-                    data_to_return = data_to_return[closest_lon][closest_lat]
-        return data_to_return
+        usetime = self._time_aware and time is not None
+        uselev = self._plevel_aware and lev is not None
+        uselatlon = self._latlon_aware and latlon is not None
+
+        timeindex, levindex, latindex, lonindex = self._indices(time, lev, latlon)
+
+        if usetime:
+            if uselev:
+                if uselatlon:
+                    return self._vardata[timeindex][levindex][latindex][lonindex]
+                else:
+                    return self._vardata[timeindex][levindex]
+            elif uselatlon:
+                return self._vardata[timeindex][:][latindex][lonindex]
+            else:
+                return self._vardata[timeindex]
+        elif uselev:
+            if uselatlon:
+                return self._vardata[:][levindex][latindex][lonindex]
+            else:
+                return self._vardata[:][levindex]
+        elif uselatlon:
+            return self._vardata[:][:][latindex][lonindex]
+        else:
+            return self._vardata[:]

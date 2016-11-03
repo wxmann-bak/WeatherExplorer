@@ -1,10 +1,21 @@
+import os
 from collections import namedtuple
 from matplotlib import colors
+
+
+colortable = namedtuple('colortable', 'cmap norm')
+rgb = namedtuple('rgb', 'r g b')
+rgba = namedtuple('rgba', 'r g b a')
 
 _max_rgb = 255.
 
 
-def colors2_cmap_and_norm(name, colors_dict):
+###################################################
+# Converting dict to cmap and norm for matplotlib #
+###################################################
+
+
+def colors_to_cmap_and_norm(name, colors_dict):
     cmap_dict = _rawdict2cmapdict(colors_dict)
     norm = colors.Normalize(min(colors_dict), max(colors_dict), clip=False)
     return colors.LinearSegmentedColormap(name, cmap_dict), norm
@@ -37,6 +48,8 @@ def _rawdict2cmapdict(colors_dict):
         cmap_dict['blue'].append((lvl, relclrs[0].b, relclrs[1].b))
         cmap_dict['alpha'].append((lvl, relclrs[0].a, relclrs[1].a))
 
+    for k in cmap_dict:
+        cmap_dict[k] = sorted(cmap_dict[k], key=lambda tup: tup[0])
     return cmap_dict
 
 
@@ -86,5 +99,16 @@ def _getcolor(rgba_vals, has_alpha):
         return rgb(r=int(rgba_vals[0]), g=int(rgba_vals[1]), b=int(rgba_vals[2]))
 
 
-rgb = namedtuple('rgb', 'r g b')
-rgba = namedtuple('rgba', 'r g b a')
+###########################
+#  Standard colortables.  #
+###########################
+
+def load_colortable(name, palfile):
+    rawcolors = from_pal(palfile)
+    cmap, norm = colors_to_cmap_and_norm(name, rawcolors)
+    return colortable(cmap=cmap, norm=norm)
+
+
+# TODO: figure out how to deal with the filesystem properly...
+ir_navy = load_colortable('IR_navy', './WeatherExplorer/colortable_pal/IR_navy.pal'),
+ir_rainbow = load_colortable('IR_rainbow', './WeatherExplorer/colortable_pal/IR_rainbow.pal')

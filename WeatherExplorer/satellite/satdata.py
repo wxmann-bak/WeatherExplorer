@@ -1,5 +1,14 @@
+import numpy as np
 
 _KM_TO_M_MULTIPLIER = 1000
+
+
+def _pixel_to_temp(pixel):
+    if pixel >= 176:
+        tempK = 418. - pixel
+    else:
+        tempK = 330 - (pixel / 2.)
+    return tempK - 273.15
 
 
 class GiniSatelliteData(object):
@@ -15,8 +24,13 @@ class GiniSatelliteData(object):
         self._std_parallel = self._geog.standard_parallel
 
     @property
-    def plotdata(self):
-        return self._plotdata
+    def pixels(self):
+        return self._plotdata & 0xff
+
+    @property
+    def brightness_temps(self):
+        conversion = np.vectorize(_pixel_to_temp, otypes=[np.float])
+        return conversion(self.pixels)
 
     @property
     def minx(self):

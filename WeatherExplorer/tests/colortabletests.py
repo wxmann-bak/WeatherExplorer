@@ -6,6 +6,7 @@ from WeatherExplorer.colortables import rgb, rgba
 
 
 class ColorTableTests(unittest.TestCase):
+
     @mock.patch('matplotlib.colors.LinearSegmentedColormap')
     def test_should_convert_colortable_only_rgb_to_cmap_and_norm(self, cmapfn):
         name = 'test'
@@ -26,13 +27,15 @@ class ColorTableTests(unittest.TestCase):
             'alpha': [(0.0, 1.0, 1.0), (0.25, 1.0, 1.0), (0.75, 1.0, 1.0), (1.0, 1.0, 1.0)]
         }
 
-        colortables.colors2_cmap_and_norm(name, tbl)
+        _, norm = colortables.colors_to_cmap_and_norm(name, tbl)
 
         args_last_call = cmapfn.call_args_list[-1][0]
         arg_name, arg_dict = args_last_call[0], args_last_call[1]
         self.maxDiff = None
         self.assertEqual(arg_name, name)
         self._assert_cmap_dicts_equal(arg_dict, expected_cmap_dict)
+        self.assertEqual(norm.vmin, -100)
+        self.assertEqual(norm.vmax, 100)
 
     @mock.patch('matplotlib.colors.LinearSegmentedColormap')
     def test_should_convert_colortable_with_discontinuities_and_alpha_to_cmap_and_norm(self, cmapfn):
@@ -56,18 +59,21 @@ class ColorTableTests(unittest.TestCase):
             'alpha': [(0.0, 1.0, 1.0), (0.25, 1.0, 1.0), (0.5, 1.0, 1.0), (0.75, 1.0, 1.0), (1.0, 0.0, 0.0)]
         }
 
-        colortables.colors2_cmap_and_norm(name, tbl)
+        _, norm = colortables.colors_to_cmap_and_norm(name, tbl)
 
         args_last_call = cmapfn.call_args_list[-1][0]
         arg_name, arg_dict = args_last_call[0], args_last_call[1]
         self.maxDiff = None
         self.assertEqual(arg_name, name)
         self._assert_cmap_dicts_equal(arg_dict, expected_cmap_dict)
+        self.assertEqual(norm.vmin, 0)
+        self.assertEqual(norm.vmax, 40)
 
     def _assert_cmap_dicts_equal(self, dict1, dict2):
         self.assertCountEqual(dict1.keys(), dict2.keys())
         for k in dict1.keys():
-            self.assertCountEqual(dict1[k], dict2[k])
+            # ordering of the tuples in the value of the dict matters, for matplotlib colormap purposes.
+            self.assertEqual(dict1[k], dict2[k])
 
     def test_should_load_colortable_with_one_rgb_per_line(self):
         file = '../colortable_pal/IR_cimms2.pal'

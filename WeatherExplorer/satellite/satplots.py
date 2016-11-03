@@ -60,9 +60,9 @@ class GiniSatellitePlotter(object):
         self._plotdata = data.brightness_temps
         self._extent = (data.minx, data.maxx, data.miny, data.maxy)
 
-    def plot(self, colortable):
+    def plot(self, colortbl):
         ax = plt.axes(projection=self._proj)
-        ax.imshow(self._plotdata, extent=self._extent, origin='upper', cmap=colortable.cmap, norm=colortable.norm)
+        ax.imshow(self._plotdata, extent=self._extent, origin='upper', cmap=colortbl.cmap, norm=colortbl.norm)
         ax.coastlines(resolution='50m', color='black', linewidth='1')
         # ax.add_feature(cfeat.BORDERS, linewidth='2', edgecolor='black')
         ax.gridlines()

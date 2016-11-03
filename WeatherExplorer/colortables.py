@@ -110,5 +110,7 @@ def load_colortable(name, palfile):
 
 
 # TODO: figure out how to deal with the filesystem properly...
-ir_navy = load_colortable('IR_navy', './WeatherExplorer/colortable_pal/IR_navy.pal'),
+ir_navy = load_colortable('IR_navy', './WeatherExplorer/colortable_pal/IR_navy.pal')
 ir_rainbow = load_colortable('IR_rainbow', './WeatherExplorer/colortable_pal/IR_rainbow.pal')
+ir_rammb = load_colortable('IR_rammb', './WeatherExplorer/colortable_pal/IR_rammb.pal')
+ir4 = load_colortable('IR4', './WeatherExplorer/colortable_pal/IR4.pal')

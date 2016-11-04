@@ -2,6 +2,7 @@ import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import netCDF4 as nc
 
+from WeatherExplorer import colortables
 from WeatherExplorer.satellite import satdata
 
 thredds_opendap_base_url = 'http://thredds.ucar.edu/thredds/dodsC/satellite'
@@ -57,13 +58,20 @@ class GiniSatellitePlotter(object):
         self._proj = ccrs.LambertConformal(central_latitude=ctrlcoords[0], central_longitude=ctrlcoords[1],
                                            standard_parallels=data.std_parallels, globe=self._globe)
 
-        self._plotdata = data.brightness_temps
+        self._sattype = data.type
+        self._pixels = data.pixels
+        self._brightness_temps = data.brightness_temps
         self._extent = (data.minx, data.maxx, data.miny, data.maxy)
 
-    def plot(self, colortbl):
+    def plot(self, colortbl=None):
+        bw = colortbl is None or self._sattype.upper() == 'VIS'
+        colortbl_to_use = colortables.vis_depth if bw else colortbl
+        plotdata = self._pixels if bw else self._brightness_temps
+
         ax = plt.axes(projection=self._proj)
-        ax.imshow(self._plotdata, extent=self._extent, origin='upper', cmap=colortbl.cmap, norm=colortbl.norm)
+        ax.imshow(plotdata, extent=self._extent, origin='upper', cmap=colortbl_to_use.cmap, norm=colortbl_to_use.norm)
+
         ax.coastlines(resolution='50m', color='black', linewidth='1')
         # ax.add_feature(cfeat.BORDERS, linewidth='2', edgecolor='black')
         ax.gridlines()
-        plt.show()
+        # plt.show()

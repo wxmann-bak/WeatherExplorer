@@ -3,6 +3,10 @@ import numpy as np
 _KM_TO_M_MULTIPLIER = 1000
 
 
+# from the calibration formula listed here:
+# http://www.unidata.ucar.edu/support/help/MailArchives/gempak/msg06455.html
+# (&)
+# http://www.goes.noaa.gov/enhanced.html
 def _pixel_to_temp(pixel):
     if pixel >= 176:
         tempK = 418. - pixel
@@ -22,6 +26,10 @@ class GiniSatelliteData(object):
         self._R_earth = self._geog.earth_radius
         self._orig = (self._geog.latitude_of_projection_origin, self._geog.longitude_of_central_meridian)
         self._std_parallel = self._geog.standard_parallel
+
+    @property
+    def type(self):
+        return self._sattype
 
     @property
     def pixels(self):

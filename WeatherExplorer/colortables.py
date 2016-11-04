@@ -1,7 +1,6 @@
-import os
 from collections import namedtuple
-from matplotlib import colors
 
+from matplotlib import colors
 
 colortable = namedtuple('colortable', 'cmap norm')
 rgb = namedtuple('rgb', 'r g b')
@@ -114,3 +113,4 @@ ir_navy = load_colortable('IR_navy', './WeatherExplorer/colortable_pal/IR_navy.p
 ir_rainbow = load_colortable('IR_rainbow', './WeatherExplorer/colortable_pal/IR_rainbow.pal')
 ir_rammb = load_colortable('IR_rammb', './WeatherExplorer/colortable_pal/IR_rammb.pal')
 ir4 = load_colortable('IR4', './WeatherExplorer/colortable_pal/IR4.pal')
+vis_depth = load_colortable('VIS_depth', './WeatherExplorer/colortable_pal/Visible-depth.pal')

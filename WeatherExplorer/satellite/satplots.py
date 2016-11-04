@@ -1,4 +1,5 @@
 import cartopy.crs as ccrs
+import cartopy.feature as cfeat
 import matplotlib.pyplot as plt
 import netCDF4 as nc
 
@@ -6,6 +7,7 @@ from WeatherExplorer import colortables
 from WeatherExplorer.satellite import satdata
 
 thredds_opendap_base_url = 'http://thredds.ucar.edu/thredds/dodsC/satellite'
+
 
 # cmaps = {
 #     'VIS': 'gray_r',
@@ -63,15 +65,22 @@ class GiniSatellitePlotter(object):
         self._brightness_temps = data.brightness_temps
         self._extent = (data.minx, data.maxx, data.miny, data.maxy)
 
-    def plot(self, colortbl=None):
+    def plot(self, extent=None, colortbl=None, gridlines=False):
         bw = colortbl is None or self._sattype.upper() == 'VIS'
         colortbl_to_use = colortables.vis_depth if bw else colortbl
-        plotdata = self._pixels if bw else self._brightness_temps
+        plotpixels = self._pixels if bw else self._brightness_temps
 
         ax = plt.axes(projection=self._proj)
-        ax.imshow(plotdata, extent=self._extent, origin='upper', cmap=colortbl_to_use.cmap, norm=colortbl_to_use.norm)
+        ax.imshow(plotpixels, extent=self._extent, origin='upper',
+                  cmap=colortbl_to_use.cmap, norm=colortbl_to_use.norm)
+        if extent is not None:
+            ax.set_extent(extent)
 
-        ax.coastlines(resolution='50m', color='black', linewidth='1')
-        # ax.add_feature(cfeat.BORDERS, linewidth='2', edgecolor='black')
-        ax.gridlines()
-        # plt.show()
+        res = '50m'
+        ax.coastlines(resolution=res, color='black', linewidth='1')
+        ax.add_feature(cfeat.BORDERS, linewidth='1', edgecolor='black')
+        states = cfeat.NaturalEarthFeature(category='cultural', name='admin_1_states_provinces_lakes',
+                                           scale=res, facecolor='none')
+        ax.add_feature(states, linewidth='0.5')
+        if gridlines:
+            ax.gridlines()

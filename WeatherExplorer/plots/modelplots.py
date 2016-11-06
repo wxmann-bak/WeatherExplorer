@@ -64,28 +64,20 @@ def to_in(kgm2):
 
 
 class CoardsNetcdfPlotter(object):
-    def __init__(self, modeldata, area):
-        self._area = area
-        self._map = area.map
+    def __init__(self, modeldata, maparea):
+        self._maparea = maparea
+        self._map = None
         self._data = modeldata
         self._map_drawn = False
         self._fignum = 1
-
-    @property
-    def maparea(self):
-        return self._area
-
-    @maparea.setter
-    def maparea(self, area):
-        self._area = area
-        self._map = area.map
-        self.newplot()
 
     def newplot(self):
         self._map_drawn = False
         self._fignum += 1
 
     def _prune_geogr_data(self, plotdata):
+        if not self._map:
+            self._draw_init()
         # add wrap-around point in longitude.
         reviseddata, lons = addcyclic(plotdata, self._data.lons)
         lons, lats = np.meshgrid(lons, self._data.lats)
@@ -96,7 +88,7 @@ class CoardsNetcdfPlotter(object):
     def _draw_init(self):
         if not self._map_drawn:
             plt.figure(self._fignum)
-            self._area.make_map()
+            self._map = self._maparea.draw_map()
             self._map_drawn = True
 
     def _abs_time(self, hrs_from_t0):

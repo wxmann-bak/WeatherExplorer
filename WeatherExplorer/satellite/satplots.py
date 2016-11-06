@@ -1,6 +1,3 @@
-import cartopy.crs as ccrs
-import cartopy.feature as cfeat
-import matplotlib.pyplot as plt
 import netCDF4 as nc
 
 from WeatherExplorer import colortables
@@ -54,28 +51,23 @@ def _getres(sattype):
 
 class GiniSatellitePlotter(object):
     def __init__(self, data):
-        self._sattype = data.type
+        self._sattype = data.sattype
         self._pixels = data.pixels
         self._brightness_temps = data.brightness_temps
-        self._extent = (data.minx, data.maxx, data.miny, data.maxy)
-        self._map = projections.LambertConformalCartopy(data.orig[0], data.orig[1], data.std_parallels[0],
-                                                        r_earth=data.earth_radius)
+        self._data_extent = (data.minx, data.maxx, data.miny, data.maxy)
+        self._map = projections.LambertConformal(data.orig[0], data.orig[1],
+                                                 (data.maxx - data.minx), (data.maxy - data.miny),
+                                                 data.std_parallels[0],
+                                                 r_earth=data.earth_radius,
+                                                 drawer='cartopy')
 
-    def plot(self, extent=None, colortbl=None, gridlines=False, res='50m'):
+    def plot(self, extent=None, colortbl=None, gridlines=False, res='medium'):
         bw = colortbl is None or self._sattype.upper() == 'VIS'
         colortbl_to_use = colortables.vis_depth if bw else colortbl
         plotpixels = self._pixels if bw else self._brightness_temps
 
-        ax = self._map.draw_map()
-        ax.imshow(plotpixels, extent=self._extent, origin='upper',
+        ax = self._map.draw_map(res=res)
+        ax.imshow(plotpixels, extent=self._data_extent, origin='upper',
                   cmap=colortbl_to_use.cmap, norm=colortbl_to_use.norm)
-        # if extent is not None:
-        #     ax.set_extent(extent)
-        #
-        # ax.coastlines(resolution=res, color='black', linewidth='1')
-        # ax.add_feature(cfeat.BORDERS, linewidth='1', edgecolor='black')
-        # states = cfeat.NaturalEarthFeature(category='cultural', name='admin_1_states_provinces_lakes',
-        #                                    scale=res, facecolor='none')
-        # ax.add_feature(states, linewidth='0.5')
-        # if gridlines:
-        #     ax.gridlines()
+        if extent is not None:
+            ax.set_extent(extent)

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import netCDF4 as nc
 
 from WeatherExplorer import colortables
+from WeatherExplorer import projections
 from WeatherExplorer.satellite import satdata
 
 thredds_opendap_base_url = 'http://thredds.ucar.edu/thredds/dodsC/satellite'
@@ -53,34 +54,28 @@ def _getres(sattype):
 
 class GiniSatellitePlotter(object):
     def __init__(self, data):
-        self._globe = ccrs.Globe(ellipse='sphere', semimajor_axis=data.earth_radius,
-                                 semiminor_axis=data.earth_radius)
-
-        ctrlcoords = data.orig
-        self._proj = ccrs.LambertConformal(central_latitude=ctrlcoords[0], central_longitude=ctrlcoords[1],
-                                           standard_parallels=data.std_parallels, globe=self._globe)
-
         self._sattype = data.type
         self._pixels = data.pixels
         self._brightness_temps = data.brightness_temps
         self._extent = (data.minx, data.maxx, data.miny, data.maxy)
+        self._map = projections.LambertConformalCartopy(data.orig[0], data.orig[1], data.std_parallels[0],
+                                                        r_earth=data.earth_radius)
 
-    def plot(self, extent=None, colortbl=None, gridlines=False):
+    def plot(self, extent=None, colortbl=None, gridlines=False, res='50m'):
         bw = colortbl is None or self._sattype.upper() == 'VIS'
         colortbl_to_use = colortables.vis_depth if bw else colortbl
         plotpixels = self._pixels if bw else self._brightness_temps
 
-        ax = plt.axes(projection=self._proj)
+        ax = self._map.draw_map()
         ax.imshow(plotpixels, extent=self._extent, origin='upper',
                   cmap=colortbl_to_use.cmap, norm=colortbl_to_use.norm)
-        if extent is not None:
-            ax.set_extent(extent)
-
-        res = '50m'
-        ax.coastlines(resolution=res, color='black', linewidth='1')
-        ax.add_feature(cfeat.BORDERS, linewidth='1', edgecolor='black')
-        states = cfeat.NaturalEarthFeature(category='cultural', name='admin_1_states_provinces_lakes',
-                                           scale=res, facecolor='none')
-        ax.add_feature(states, linewidth='0.5')
-        if gridlines:
-            ax.gridlines()
+        # if extent is not None:
+        #     ax.set_extent(extent)
+        #
+        # ax.coastlines(resolution=res, color='black', linewidth='1')
+        # ax.add_feature(cfeat.BORDERS, linewidth='1', edgecolor='black')
+        # states = cfeat.NaturalEarthFeature(category='cultural', name='admin_1_states_provinces_lakes',
+        #                                    scale=res, facecolor='none')
+        # ax.add_feature(states, linewidth='0.5')
+        # if gridlines:
+        #     ax.gridlines()

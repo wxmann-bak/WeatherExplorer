@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import cartopy.crs as ccrs
 import cartopy.feature as cfeat
+import cartopy.util as cutil
 
 basemap = 'basemap'
 cartopy = 'cartopy'
@@ -22,8 +23,10 @@ class MapProjection(object):
 
     lib_unavailable_msg = "{} library unavailable: must install it or try with a different library."
 
+    _default_drawer = basemap
+
     def __init__(self, drawer=None):
-        self.drawer = basemap if drawer is None else drawer
+        self.drawer = MapProjection._default_drawer if drawer is None else drawer
 
     def draw_map(self, res='medium'):
         if self.drawer == basemap:
@@ -31,7 +34,7 @@ class MapProjection(object):
         elif self.drawer == cartopy:
             return self._draw_cartopy(res)
         else:
-            raise NotImplementedError("Unsupported drawer: {}".format(drawer))
+            raise NotImplementedError("Unsupported drawer: {}".format(self.drawer))
 
     def _draw_basemap(self, res):
         m = self._basemap_object(res)
@@ -77,7 +80,7 @@ class EquidistantCylindrical(MapProjection):
     def _cartopy_object(self, res):
         crs = ccrs.PlateCarree()
         ax = plt.axes(projection=crs)
-        ax.set_extent((self.llcrnlon, self.llcrnlat, self.urcrnlon, self.urcrnlat), crs=crs)
+        ax.set_extent((self.llcrnlon, self.urcrnlon, self.llcrnlat, self.urcrnlat))
         return ax
 
 

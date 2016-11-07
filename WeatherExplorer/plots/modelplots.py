@@ -9,6 +9,7 @@ from datetime import timedelta
 
 import numpy as np
 import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
 from mpl_toolkits.basemap import addcyclic
 
 from WeatherExplorer import calculations
@@ -105,7 +106,7 @@ class CoardsNetcdfPlotter(object):
         self._draw_init()
         x, y = self._map(lons, lats)
         contour_lvls = np.arange(900, 1080., contour_delta)
-        self._map.contour(x, y, plotdata, contour_lvls, colors='k', linewidths=1.)
+        self._map.contour(lons, lats, plotdata, contour_lvls, colors='k', linewidths=1., transform=ccrs.PlateCarree())
         plot_slp_extrema(self._map, x, y, plotdata, window=window)
 
     def geoptnl_hgt(self, lev, hr=0, contour_delta=6):

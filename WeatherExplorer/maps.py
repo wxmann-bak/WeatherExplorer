@@ -63,7 +63,8 @@ class MapWrapper(object):
         return self.map
 
 
-atlantic_basin = region_cyl((5.0, -105.0), (60.0, -5.0), dlat_labels=10, dlon_labels=15)
+# atlantic_basin = region_cyl((5.0, -105.0), (60.0, -5.0), dlat_labels=10, dlon_labels=15)
+atlantic_basin = projections.EquidistantCylindrical(llcrnlat=5.0, llcrnlon=--105.0, urcrnlat=60, urcrnlon=-5.0)
 # north_america = lcc((45, -100), width=11000000, height=8500000, resolution='l')
 north_america = projections.LambertConformal(lat0=45, lon0=-100, width=11000000, height=8500000)
 nhem_us = nhem(-100)

@@ -1,7 +1,7 @@
 from collections import namedtuple
 from operator import attrgetter
 
-from WeatherExplorer.base import BaseCollection, LazyEvalResultSet
+from WeatherExplorer.base import BaseColl, QueryResult
 
 from WeatherExplorer.tcutils import sshs_category
 
@@ -16,9 +16,9 @@ class StormRetrievable(object):
         raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
 
 
-class BasinHistory(BaseCollection, StormRetrievable):
+class BasinHistory(BaseColl, StormRetrievable):
     def __init__(self, basin, storms):
-        BaseCollection.__init__(self, storms)
+        BaseColl.__init__(self, storms)
         self._basin = basin
         self._storms_by_year = BasinHistory._index_storms_by_year(storms)
 
@@ -36,8 +36,8 @@ class BasinHistory(BaseCollection, StormRetrievable):
     def basin(self):
         return self._basin
 
-    def query(self, queryfunc):
-        return _BasinQueryResult(self, queryfunc)
+    def __getitem__(self, q):
+        return _BasinQueryResult(self, q)
 
     def get_tc(self, year, name=None, number=None):
         if year is None:
@@ -58,9 +58,9 @@ class BasinHistory(BaseCollection, StormRetrievable):
         return None
 
 
-class _BasinQueryResult(LazyEvalResultSet, StormRetrievable):
+class _BasinQueryResult(QueryResult, StormRetrievable):
     def __init__(self, basin_hist, queryfn):
-        LazyEvalResultSet.__init__(self, basin_hist, queryfn)
+        QueryResult.__init__(self, basin_hist, queryfn)
 
     def _new_instance(self, queryfn):
         return _BasinQueryResult(self.source, queryfn)
@@ -135,11 +135,11 @@ class StormHistory(object):
 
     @property
     def max_wind_speed(self):
-        return max([pt.windspd for pt in self._pts])
+        return max(pt.windspd for pt in self._pts)
 
     @property
     def min_ctrl_pres(self):
-        return min([pt.pres for pt in self._pts])
+        return min(pt.pres for pt in self._pts)
 
     @property
     def max_sshs_category(self):
@@ -155,8 +155,7 @@ class StormHistory(object):
         return tuple(statuses)
 
     def classifiable(self):
-        classified_pts = [pt for pt in self._pts if pt.status in ('HU', 'TS', 'TD', 'SS', 'SD')]
-        return StormHistory.from_hurdat_points(classified_pts)
+        return StormHistory.from_hurdat_points(pt for pt in self._pts if pt.status in ('HU', 'TS', 'TD', 'SS', 'SD'))
 
     def slice(self, slice_fn):
         on_slice = False

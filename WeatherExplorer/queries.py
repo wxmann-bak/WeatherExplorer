@@ -47,7 +47,7 @@ class QueryBuilder(object):
     def neq(self, value):
         return self._get_func(operator.ne, value)
 
-
+# TODO: remove allof, noneof, anyof
 def allof(*queries):
     def _all_fn(storm):
         for query in queries:

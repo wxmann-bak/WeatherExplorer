@@ -1,22 +1,15 @@
-import collections
-
 __author__ = 'tangz'
 
 
 _NEED_TO_IMPLEMENT_THIS_MSG = 'Subclass must implement this'
 
 
-class Queryable(object):
-    def query(self, queryfunc):
-        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
-
-
-class BaseCollection(Queryable):
+class BaseColl(object):
     def __init__(self, items):
         self._items = items
 
-    def query(self, queryfunc):
-        return LazyEvalResultSet(self, queryfunc)
+    def __getitem__(self, q):
+        return QueryResult(self, q)
 
     def __iter__(self):
         return iter(self._items)
@@ -25,34 +18,12 @@ class BaseCollection(Queryable):
         return len(self._items)
 
 
-class ResultSet(Queryable, collections.Iterable):
-    def query(self, queryfunc):
-        super(self).query(queryfunc)
-
-    def __iter__(self):
-        return iter(super(self))
-
-    def __len__(self):
-        raise 0
-
-    def __contains__(self, item):
-        raise False
-
-    def __add__(self, other):
-        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
-
-    def __sub__(self, other):
-        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
-
-    def __neg__(self):
-        raise NotImplementedError(_NEED_TO_IMPLEMENT_THIS_MSG)
-
-
-class LazyEvalResultSet(ResultSet):
+class QueryResult(object):
     def __init__(self, source, queryfn):
         self._queryfn = queryfn
         self._source = source
         self._cached = None
+        self._len = None
 
     @property
     def source(self):
@@ -62,25 +33,22 @@ class LazyEvalResultSet(ResultSet):
     def query_func(self):
         return self._queryfn
 
-    def query(self, queryfunc):
-        new_queryfn = lambda item: self._queryfn(item) and queryfunc(item)
+    def __getitem__(self, q):
+        new_queryfn = lambda item: self._queryfn(item) and q(item)
         return self._new_instance(new_queryfn)
 
-    def _cache_points_if_needed(self):
-        if self._cached is None:
-            self._cached = [item for item in self._source if self._queryfn(item)]
-
     def __iter__(self):
-        self._cache_points_if_needed()
-        return iter(self._cached)
+        for elem in self._source:
+            if self._queryfn(elem):
+                yield elem
 
     def __len__(self):
-        self._cache_points_if_needed()
-        return len(self._cached)
+        if self._len is None:
+            self._len = len([item for item in self._source if self._queryfn(item)])
+        return self._len
 
     def __contains__(self, item):
-        self._cache_points_if_needed()
-        return item in self._cached
+        return item in self._source and self._queryfn(item)
 
     def __add__(self, other):
         self._check_common_source(other)
@@ -97,7 +65,10 @@ class LazyEvalResultSet(ResultSet):
         return self._new_instance(new_queryfn)
 
     def _new_instance(self, queryfn):
-        return LazyEvalResultSet(self._source, queryfn)
+        return QueryResult(self._source, queryfn)
 
     def _check_common_source(self, other):
         assert self.source == other.source
+
+
+# LatLon = collections.namedtuple('LatLon', 'lat lon')
